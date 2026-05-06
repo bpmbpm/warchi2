@@ -1,0 +1,50 @@
+{
+  "format": "warchi-model",
+  "formatVersion": "1.0",
+  "model": {
+    "id": "model-test",
+    "name": "Тестовая модель",
+    "description": "Демонстрационная модель ArchiMate с компонентами различных слоёв",
+    "version": "1.3.0",
+    "notationId": "n-archimate",
+    "ownerId": "user1",
+    "createdAt": "2026-01-15",
+    "updatedAt": "2026-05-05"
+  },
+  "nodes": [
+    { "id": "n1",  "name": "Портал клиента",      "nodeTypeId": "nt-app",    "parentNodeId": null, "x":  80, "y":  80, "w": 140, "h": 60, "layer": "Приложение" },
+    { "id": "n2",  "name": "API Gateway",          "nodeTypeId": "nt-svc",    "parentNodeId": null, "x": 280, "y":  80, "w": 140, "h": 60, "layer": "Приложение" },
+    { "id": "n3",  "name": "Сервис авторизации",   "nodeTypeId": "nt-svc",    "parentNodeId": null, "x": 480, "y":  80, "w": 140, "h": 60, "layer": "Приложение" },
+    { "id": "n4",  "name": "Бизнес-логика",        "nodeTypeId": "nt-app",    "parentNodeId": null, "x": 280, "y": 200, "w": 140, "h": 60, "layer": "Приложение" },
+    { "id": "n5",  "name": "Менеджер заказов",     "nodeTypeId": "nt-proc",   "parentNodeId": null, "x":  80, "y": 310, "w": 140, "h": 60, "layer": "Бизнес" },
+    { "id": "n6",  "name": "Клиент",               "nodeTypeId": "nt-actor",  "parentNodeId": null, "x": 480, "y": 310, "w": 140, "h": 60, "layer": "Бизнес" },
+    { "id": "n7",  "name": "База данных клиентов", "nodeTypeId": "nt-data",   "parentNodeId": null, "x":  80, "y": 420, "w": 160, "h": 60, "layer": "Данные" },
+    { "id": "n8",  "name": "База данных заказов",  "nodeTypeId": "nt-data",   "parentNodeId": null, "x": 280, "y": 420, "w": 160, "h": 60, "layer": "Данные" },
+    { "id": "n9",  "name": "Сервер приложений",    "nodeTypeId": "nt-infra",  "parentNodeId": null, "x": 480, "y": 420, "w": 140, "h": 60, "layer": "Инфраструктура" },
+    { "id": "n10", "name": "Повышение продаж",     "nodeTypeId": "nt-goal",   "parentNodeId": null, "x": 680, "y":  80, "w": 130, "h": 60, "layer": "Мотивация" },
+    { "id": "n11", "name": "Интерфейс REST",       "nodeTypeId": "nt-iface",  "parentNodeId": null, "x": 680, "y": 200, "w": 130, "h": 60, "layer": "Приложение" },
+    { "id": "n12", "name": "Роль менеджера",       "nodeTypeId": "nt-role",   "parentNodeId": null, "x": 280, "y": 310, "w": 140, "h": 60, "layer": "Бизнес" },
+    { "id": "n13", "name": "Цифровизация",         "nodeTypeId": "nt-driver", "parentNodeId": null, "x": 680, "y": 310, "w": 130, "h": 60, "layer": "Мотивация" },
+    { "id": "n14", "name": "Уведомления",          "nodeTypeId": "nt-svc",    "parentNodeId": null, "x": 480, "y": 200, "w": 140, "h": 60, "layer": "Приложение" }
+  ],
+  "links": [
+    { "id": "l1",  "sourceId": "n1",  "targetId": "n2",  "linkTypeId": "lt-flow",    "label": "HTTP" },
+    { "id": "l2",  "sourceId": "n2",  "targetId": "n3",  "linkTypeId": "lt-trigger", "label": "" },
+    { "id": "l3",  "sourceId": "n2",  "targetId": "n4",  "linkTypeId": "lt-flow",    "label": "REST" },
+    { "id": "l4",  "sourceId": "n4",  "targetId": "n5",  "linkTypeId": "lt-real",    "label": "" },
+    { "id": "l5",  "sourceId": "n5",  "targetId": "n7",  "linkTypeId": "lt-access",  "label": "чтение" },
+    { "id": "l6",  "sourceId": "n5",  "targetId": "n8",  "linkTypeId": "lt-access",  "label": "запись" },
+    { "id": "l7",  "sourceId": "n3",  "targetId": "n7",  "linkTypeId": "lt-access",  "label": "" },
+    { "id": "l8",  "sourceId": "n6",  "targetId": "n1",  "linkTypeId": "lt-assoc",   "label": "использует" },
+    { "id": "l9",  "sourceId": "n4",  "targetId": "n9",  "linkTypeId": "lt-assign",  "label": "" },
+    { "id": "l10", "sourceId": "n2",  "targetId": "n11", "linkTypeId": "lt-real",    "label": "" },
+    { "id": "l11", "sourceId": "n12", "targetId": "n5",  "linkTypeId": "lt-assign",  "label": "" },
+    { "id": "l12", "sourceId": "n10", "targetId": "n13", "linkTypeId": "lt-assoc",   "label": "" },
+    { "id": "l13", "sourceId": "n4",  "targetId": "n14", "linkTypeId": "lt-trigger", "label": "событие" },
+    { "id": "l14", "sourceId": "n14", "targetId": "n6",  "linkTypeId": "lt-flow",    "label": "push" }
+  ],
+  "diagrams": [
+    { "id": "diag-main", "name": "Согласование с мейнфреймом", "notationId": "n-archimate", "description": "Основная диаграмма взаимодействия компонентов" },
+    { "id": "diag-biz",  "name": "Бизнес-слой",                "notationId": "n-archimate", "description": "Диаграмма бизнес-компонентов" }
+  ]
+}

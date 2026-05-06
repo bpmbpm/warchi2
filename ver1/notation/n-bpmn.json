@@ -1,0 +1,43 @@
+{
+  "format": "warchi-notation",
+  "formatVersion": "1.0",
+  "id": "n-bpmn",
+  "name": "BPMN",
+  "fullName": "BPMN 2.0",
+  "version": "2.0.0",
+  "icon": "🔄",
+  "description": "Нотация моделирования бизнес-процессов (OMG). В wArchi2-JS реализована частично — основные события, задачи и шлюзы.",
+  "elements": [
+    { "id": "start-event", "name": "Стартовое событие", "icon": "○", "layer": "События" },
+    { "id": "end-event",   "name": "Конечное событие",  "icon": "◎", "layer": "События" },
+    { "id": "task",        "name": "Задача",            "icon": "▭", "layer": "Действия" },
+    { "id": "gateway",     "name": "Шлюз",              "icon": "◇", "layer": "Шлюзы" },
+    { "id": "pool",        "name": "Пул",               "icon": "▤", "layer": "Структура" },
+    { "id": "lane",        "name": "Дорожка",           "icon": "▥", "layer": "Структура" }
+  ],
+  "tags": ["Event", "Task", "Gateway", "Pool", "Lane", "Message"],
+  "linkTypes": [
+    { "id": "seq",   "name": "Поток управления", "style": "solid",  "arrow": "end" },
+    { "id": "msg",   "name": "Поток сообщений",  "style": "dashed", "arrow": "end" }
+  ],
+  "rules": [
+    {
+      "id":        "exactly-one-start",
+      "kind":      "model",
+      "predicate": "count(nodes : nodeType == 'start-event') == 1",
+      "message":   "У каждого процесса должен быть ровно один стартовый узел"
+    },
+    {
+      "id":        "gateway-not-end",
+      "kind":      "node",
+      "predicate": "nodeType == 'gateway' implies exists(out : out.source == this)",
+      "message":   "Шлюз не может быть конечным узлом процесса"
+    },
+    {
+      "id":        "message-cross-pools",
+      "kind":      "link",
+      "predicate": "linkType == 'msg' implies source.pool != target.pool",
+      "message":   "Поток сообщений возможен только между разными пулами"
+    }
+  ]
+}

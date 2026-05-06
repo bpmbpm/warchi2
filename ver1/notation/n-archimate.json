@@ -1,0 +1,64 @@
+{
+  "format": "warchi-notation",
+  "formatVersion": "1.0",
+  "id": "n-archimate",
+  "name": "ArchiMate",
+  "fullName": "ArchiMate 3.1",
+  "version": "3.1.0",
+  "icon": "🏛️",
+  "description": "Стандарт архитектурного описания предприятия (The Open Group). Поддерживаются основные слои: Мотивация, Бизнес, Приложение, Технология/Инфраструктура, Данные.",
+  "elements": [
+    { "id": "goal",     "name": "Цель",            "icon": "🎯", "layer": "Мотивация" },
+    { "id": "driver",   "name": "Драйвер",         "icon": "🚀", "layer": "Мотивация" },
+    { "id": "process",  "name": "Бизнес-процесс",  "icon": "📋", "layer": "Бизнес" },
+    { "id": "role",     "name": "Роль",            "icon": "👤", "layer": "Бизнес" },
+    { "id": "actor",    "name": "Актор",           "icon": "🤝", "layer": "Бизнес" },
+    { "id": "app",      "name": "Приложение",      "icon": "📦", "layer": "Приложение" },
+    { "id": "service",  "name": "Сервис",          "icon": "⚙️", "layer": "Приложение" },
+    { "id": "iface",    "name": "Интерфейс",       "icon": "🔌", "layer": "Приложение" },
+    { "id": "data",     "name": "Объект данных",   "icon": "🗄️", "layer": "Данные" },
+    { "id": "infra",    "name": "Инфраструктура",  "icon": "🖥️", "layer": "Инфраструктура" }
+  ],
+  "tags": ["Strategy", "Motivation", "Business", "Application", "Technology", "Physical", "Implementation"],
+  "linkTypes": [
+    { "id": "flow",    "name": "Поток данных", "style": "solid",  "arrow": "end" },
+    { "id": "trigger", "name": "Триггер",      "style": "dashed", "arrow": "end" },
+    { "id": "assoc",   "name": "Ассоциация",   "style": "solid",  "arrow": "none" },
+    { "id": "compose", "name": "Композиция",   "style": "solid",  "arrow": "diamond" },
+    { "id": "real",    "name": "Реализация",   "style": "dashed", "arrow": "end" },
+    { "id": "assign",  "name": "Назначение",   "style": "solid",  "arrow": "end" },
+    { "id": "access",  "name": "Доступ",       "style": "dashed", "arrow": "end" }
+  ],
+  "rules": [
+    {
+      "id":        "no-self-loops",
+      "kind":      "link",
+      "predicate": "source != target",
+      "message":   "Связь не может вести из узла в самого себя"
+    },
+    {
+      "id":        "realization-app-to-service",
+      "kind":      "link",
+      "predicate": "linkType == 'real' implies (source.nodeTypeId == 'app' && target.nodeTypeId == 'service')",
+      "message":   "Связь «Реализация» направлена от приложения к сервису"
+    },
+    {
+      "id":        "assignment-role-to-process",
+      "kind":      "link",
+      "predicate": "linkType == 'assign' implies (source.nodeTypeId in {'role','actor'} && target.nodeTypeId == 'process')",
+      "message":   "Связь «Назначение» допускается только между ролью/актором и процессом"
+    },
+    {
+      "id":        "trigger-directed",
+      "kind":      "link",
+      "predicate": "linkType == 'trigger' implies direction == 'directed'",
+      "message":   "Связь «Триггер» обязана быть ориентированной"
+    },
+    {
+      "id":        "access-target-data",
+      "kind":      "link",
+      "predicate": "linkType == 'access' implies target.nodeTypeId == 'data'",
+      "message":   "Связь «Доступ» должна вести К объекту данных"
+    }
+  ]
+}

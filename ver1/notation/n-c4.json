@@ -1,0 +1,43 @@
+{
+  "format": "warchi-notation",
+  "formatVersion": "1.0",
+  "id": "n-c4",
+  "name": "C4 Model",
+  "fullName": "C4 Model",
+  "version": "1.0.0",
+  "icon": "📐",
+  "description": "Контекст → Контейнеры → Компоненты → Код. Четыре уровня абстракции для архитектуры программного обеспечения (Simon Brown).",
+  "elements": [
+    { "id": "person",     "name": "Пользователь",       "icon": "👤", "layer": "Уровень 1" },
+    { "id": "system",     "name": "Системный контекст", "icon": "🌐", "layer": "Уровень 1" },
+    { "id": "container",  "name": "Контейнер",          "icon": "📦", "layer": "Уровень 2" },
+    { "id": "component",  "name": "Компонент",          "icon": "🧩", "layer": "Уровень 3" },
+    { "id": "code",       "name": "Класс/Код",          "icon": "📄", "layer": "Уровень 4" },
+    { "id": "database",   "name": "Хранилище",          "icon": "🗄️", "layer": "Уровень 2" }
+  ],
+  "tags": ["Person", "System", "Container", "Component", "Code", "Database", "External"],
+  "linkTypes": [
+    { "id": "uses", "name": "Использует", "style": "solid",  "arrow": "end" },
+    { "id": "rel",  "name": "Отношение",  "style": "solid",  "arrow": "end" }
+  ],
+  "rules": [
+    {
+      "id":        "container-belongs-to-system",
+      "kind":      "node",
+      "predicate": "nodeType == 'container' implies exists(parent : parent.nodeType == 'system')",
+      "message":   "Контейнер должен принадлежать ровно одной системе"
+    },
+    {
+      "id":        "level-direction",
+      "kind":      "link",
+      "predicate": "(source.layer in {'Уровень 1','Уровень 2','Уровень 3'}) implies (level(target) >= level(source))",
+      "message":   "Связи между уровнями допускаются только сверху вниз: Context → Container → Component → Code"
+    },
+    {
+      "id":        "external-tag-grey",
+      "kind":      "node",
+      "predicate": "'External' in tags implies style == 'grey'",
+      "message":   "Узлы с тегом External должны отрисовываться серым цветом"
+    }
+  ]
+}
