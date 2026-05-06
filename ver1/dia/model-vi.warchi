@@ -1,0 +1,35 @@
+{
+  "format": "warchi-model",
+  "formatVersion": "1.0",
+  "model": {
+    "id": "model-vi",
+    "name": "ВсеИнструменты.ру",
+    "description": "C4-модель интернет-магазина инструментов: сайт, мобильное приложение, склад.",
+    "version": "1.0.0",
+    "notationId": "n-c4",
+    "ownerId": "user1",
+    "createdAt": "2026-04-12",
+    "updatedAt": "2026-05-06"
+  },
+  "nodes": [
+    { "id": "vi1", "name": "Покупатель",            "nodeTypeId": "nt-actor", "parentNodeId": null, "x":  60, "y":  60, "w": 140, "h": 60, "layer": "Бизнес" },
+    { "id": "vi2", "name": "Веб-сайт",              "nodeTypeId": "nt-app",   "parentNodeId": null, "x": 260, "y":  60, "w": 140, "h": 60, "layer": "Приложение" },
+    { "id": "vi3", "name": "Мобильное приложение",  "nodeTypeId": "nt-app",   "parentNodeId": null, "x": 260, "y": 160, "w": 160, "h": 60, "layer": "Приложение" },
+    { "id": "vi4", "name": "API заказов",           "nodeTypeId": "nt-svc",   "parentNodeId": null, "x": 480, "y": 110, "w": 140, "h": 60, "layer": "Приложение" },
+    { "id": "vi5", "name": "Каталог товаров",       "nodeTypeId": "nt-data",  "parentNodeId": null, "x": 680, "y":  60, "w": 160, "h": 60, "layer": "Данные" },
+    { "id": "vi6", "name": "Заказы (БД)",           "nodeTypeId": "nt-data",  "parentNodeId": null, "x": 680, "y": 160, "w": 160, "h": 60, "layer": "Данные" },
+    { "id": "vi7", "name": "Склад",                 "nodeTypeId": "nt-infra", "parentNodeId": null, "x": 480, "y": 260, "w": 140, "h": 60, "layer": "Инфраструктура" }
+  ],
+  "links": [
+    { "id": "vil1", "sourceId": "vi1", "targetId": "vi2", "linkTypeId": "lt-flow",    "label": "HTTPS" },
+    { "id": "vil2", "sourceId": "vi1", "targetId": "vi3", "linkTypeId": "lt-flow",    "label": "HTTPS" },
+    { "id": "vil3", "sourceId": "vi2", "targetId": "vi4", "linkTypeId": "lt-flow",    "label": "REST" },
+    { "id": "vil4", "sourceId": "vi3", "targetId": "vi4", "linkTypeId": "lt-flow",    "label": "REST" },
+    { "id": "vil5", "sourceId": "vi4", "targetId": "vi5", "linkTypeId": "lt-access",  "label": "чтение" },
+    { "id": "vil6", "sourceId": "vi4", "targetId": "vi6", "linkTypeId": "lt-access",  "label": "запись" },
+    { "id": "vil7", "sourceId": "vi4", "targetId": "vi7", "linkTypeId": "lt-trigger", "label": "отгрузка" }
+  ],
+  "diagrams": [
+    { "id": "diag-vi", "name": "C4: контейнеры", "notationId": "n-c4", "description": "Уровень контейнеров C4" }
+  ]
+}

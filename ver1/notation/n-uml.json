@@ -1,0 +1,46 @@
+{
+  "format": "warchi-notation",
+  "formatVersion": "1.0",
+  "id": "n-uml",
+  "name": "UML",
+  "fullName": "UML 2.5",
+  "version": "2.5.0",
+  "icon": "📊",
+  "description": "Унифицированный язык моделирования. Поддерживаются простые классовые, компонентные диаграммы и use-case.",
+  "elements": [
+    { "id": "class",     "name": "Класс",     "icon": "◻", "layer": "Класс" },
+    { "id": "component", "name": "Компонент", "icon": "◼", "layer": "Компонент" },
+    { "id": "interface", "name": "Интерфейс", "icon": "○", "layer": "Класс" },
+    { "id": "state",     "name": "Состояние", "icon": "⏺", "layer": "Состояние" },
+    { "id": "actor",     "name": "Актор",     "icon": "○", "layer": "Use case" },
+    { "id": "usecase",   "name": "Use case",  "icon": "◯", "layer": "Use case" }
+  ],
+  "tags": ["Class", "Component", "Interface", "UseCase", "Actor", "State"],
+  "linkTypes": [
+    { "id": "assoc",     "name": "Ассоциация",   "style": "solid",  "arrow": "none" },
+    { "id": "compose",   "name": "Композиция",   "style": "solid",  "arrow": "diamond" },
+    { "id": "aggregate", "name": "Агрегация",    "style": "solid",  "arrow": "diamond-empty" },
+    { "id": "real",      "name": "Реализация",   "style": "dashed", "arrow": "triangle-empty" },
+    { "id": "depend",    "name": "Зависимость",  "style": "dashed", "arrow": "end" }
+  ],
+  "rules": [
+    {
+      "id":        "composition-diamond-on-container",
+      "kind":      "link",
+      "predicate": "linkType == 'compose' implies arrowSide == 'source'",
+      "message":   "Композиция отображается ромбом со стороны контейнера"
+    },
+    {
+      "id":        "realization-style",
+      "kind":      "link",
+      "predicate": "linkType == 'real' implies (style == 'dashed' && arrow == 'triangle-empty')",
+      "message":   "Реализация — пунктирная стрелка с пустым треугольником"
+    },
+    {
+      "id":        "multiplicity-on-both-ends",
+      "kind":      "link",
+      "predicate": "linkType in {'assoc','aggregate','compose'} implies (sourceMult != null && targetMult != null)",
+      "message":   "Множественность указывается на каждом конце связи"
+    }
+  ]
+}
