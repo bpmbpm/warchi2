@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wArchi — Репозиторий архитектуры</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #1a1a2e;
+  --bg2: #16213e;
+  --bg3: #0f3460;
+  --panel: #1e2a3a;
+  --panel2: #243447;
+  --border: #2d4a6a;
+  --accent: #4a90d9;
+  --accent2: #5ba3e8;
+  --text: #e0e8f0;
+  --text2: #8baac0;
+  --text3: #5a7a99;
+  --green: #4caf50;
+  --red: #f44336;
+  --yellow: #ffc107;
+  --orange: #ff9800;
+  --purple: #9c27b0;
+  --canvas-bg: #12192a;
+  --node-bg: #1e3a5f;
+  --node-border: #4a90d9;
+  --edge: #5ba3e8;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: 'Consolas', 'Courier New', monospace;
+  --radius: 6px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+  --log-h: 140px;
+}
+html, body { height: 100%; overflow: hidden; font-family: var(--font); background: var(--bg); color: var(--text); font-size: 13px; }
+
+/* ===== LAYOUT ===== */
+#app { display: flex; flex-direction: column; height: 100vh; }
+#header { display: flex; align-items: center; height: 44px; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 12px; gap: 8px; flex-shrink: 0; z-index: 100; }
+#main-area { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+#sidebar { width: 220px; min-width: 120px; max-width: 400px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+#sidebar-resize { position: absolute; right: 0; top: 0; bottom: 0; width: 4px; cursor: col-resize; background: transparent; z-index: 10; }
+#sidebar-resize:hover { background: var(--accent); }
+#content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+#right-panel { width: 260px; min-width: 160px; max-width: 500px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+#right-panel-resize { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; cursor: col-resize; background: transparent; z-index: 10; }
+#right-panel-resize:hover { background: var(--accent); }
+#log-area { flex-shrink: 0; height: var(--log-h); min-height: 40px; max-height: 80vh; background: var(--bg2); border-top: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
+#log-resize-handle { position: absolute; top: 0; left: 0; right: 0; height: 5px; cursor: n-resize; z-index: 10; }
+#log-resize-handle:hover { background: var(--accent); opacity: 0.5; }
+/* corner resize */
+#log-corner { position: absolute; bottom: 0; right: 0; width: 14px; height: 14px; cursor: nw-resize; z-index: 11; }
+#log-corner::before { content: ''; position: absolute; bottom: 2px; right: 2px; width: 10px; height: 10px; border-right: 2px solid var(--text3); border-bottom: 2px solid var(--text3); }
+
+/* ===== HEADER ===== */
+.logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; cursor: pointer; white-space: nowrap; }
+.logo span { color: var(--text2); font-weight: 400; font-size: 12px; margin-left: 4px; }
+.header-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+.header-nav { display: flex; gap: 2px; }
+.nav-btn { background: transparent; border: none; color: var(--text2); cursor: pointer; padding: 5px 10px; border-radius: var(--radius); font-size: 12px; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+.nav-btn:hover, .nav-btn.active { background: var(--bg3); color: var(--accent); }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.user-badge { background: var(--bg3); color: var(--accent2); padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.icon-btn { background: transparent; border: none; color: var(--text2); cursor: pointer; padding: 5px 7px; border-radius: var(--radius); font-size: 14px; transition: background 0.15s, color 0.15s; }
+.icon-btn:hover { background: var(--border); color: var(--text); }
+
+/* ===== VIEWS ===== */
+.view { display: none; flex: 1; overflow: hidden; }
+.view.active { display: flex; }
+
+/* ===== HOME VIEW ===== */
+#view-home { flex-direction: column; overflow-y: auto; padding: 24px; gap: 20px; background: var(--bg); }
+.home-title { font-size: 20px; font-weight: 700; color: var(--text); }
+.home-subtitle { color: var(--text2); font-size: 12px; margin-top: 4px; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.stat-card .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text2); font-size: 11px; margin-top: 2px; }
+.section-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.entity-list { display: flex; flex-direction: column; gap: 6px; }
+.entity-row { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.entity-row:hover { border-color: var(--accent); background: var(--panel2); }
+.entity-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.entity-name { font-size: 13px; font-weight: 500; }
+.entity-meta { color: var(--text2); font-size: 11px; margin-top: 2px; }
+.entity-badge { margin-left: auto; background: var(--bg3); color: var(--accent2); font-size: 10px; padding: 2px 7px; border-radius: 10px; }
+.changelog { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.changelog-item { padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.changelog-item:last-child { border-bottom: none; }
+.cl-version { font-size: 11px; font-weight: 600; background: var(--bg3); color: var(--accent2); padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
+.cl-text { color: var(--text2); font-size: 12px; }
+.cl-date { margin-left: auto; color: var(--text3); font-size: 11px; white-space: nowrap; }
+.home-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ===== SIDEBAR ===== */
+.sidebar-header { padding: 10px 12px 6px; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; }
+.sidebar-search { padding: 6px 10px; }
+.sidebar-search input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; border-radius: var(--radius); font-size: 12px; outline: none; }
+.sidebar-search input:focus { border-color: var(--accent); }
+.tree { overflow-y: auto; flex: 1; padding: 4px 0; }
+.tree-item { display: flex; align-items: center; padding: 4px 8px 4px 0; cursor: pointer; border-radius: 4px; margin: 1px 4px; transition: background 0.1s; user-select: none; }
+.tree-item:hover { background: var(--panel2); }
+.tree-item.selected { background: var(--bg3); }
+.tree-toggle { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--text3); font-size: 10px; }
+.tree-icon { font-size: 13px; margin-right: 5px; flex-shrink: 0; }
+.tree-label { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-count { margin-left: auto; color: var(--text3); font-size: 10px; }
+.tree-children { padding-left: 16px; }
+.sidebar-btn { width: calc(100% - 16px); margin: 4px 8px; padding: 6px 10px; background: var(--bg3); border: 1px dashed var(--border); color: var(--text2); border-radius: var(--radius); cursor: pointer; font-size: 12px; text-align: left; transition: background 0.15s; }
+.sidebar-btn:hover { background: var(--border); color: var(--text); }
+
+/* ===== CANVAS VIEW ===== */
+#view-editor { flex-direction: row; }
+#canvas-area { flex: 1; overflow: hidden; position: relative; background: var(--canvas-bg); }
+#diagram-canvas { display: block; cursor: default; }
+.canvas-toolbar { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 4px 8px; display: flex; gap: 4px; z-index: 20; box-shadow: var(--shadow); }
+.canvas-toolbar button { background: transparent; border: none; color: var(--text2); cursor: pointer; padding: 4px 8px; border-radius: 14px; font-size: 12px; transition: background 0.15s; }
+.canvas-toolbar button:hover, .canvas-toolbar button.active { background: var(--bg3); color: var(--accent); }
+.canvas-toolbar .sep { width: 1px; background: var(--border); margin: 2px 2px; }
+.canvas-info { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.5); padding: 3px 8px; border-radius: 4px; font-size: 11px; color: var(--text3); }
+
+/* ===== DIAGRAM TABS ===== */
+.diagram-tabs { display: flex; align-items: center; background: var(--panel); border-bottom: 1px solid var(--border); padding: 0 8px; height: 32px; gap: 2px; overflow-x: auto; flex-shrink: 0; }
+.diagram-tab { padding: 6px 12px; border-radius: var(--radius) var(--radius) 0 0; font-size: 12px; cursor: pointer; color: var(--text2); border: 1px solid transparent; border-bottom: none; transition: all 0.15s; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+.diagram-tab:hover { color: var(--text); background: var(--panel2); }
+.diagram-tab.active { color: var(--text); background: var(--canvas-bg); border-color: var(--border); }
+.diagram-tab .tab-close { opacity: 0; font-size: 11px; padding: 0 2px; margin-right: -4px; }
+.diagram-tab:hover .tab-close { opacity: 0.6; }
+.tab-add { padding: 4px 8px; color: var(--text3); cursor: pointer; border-radius: 4px; }
+.tab-add:hover { color: var(--accent); background: var(--panel2); }
+
+/* ===== RIGHT PANEL ===== */
+.panel-tabs { display: flex; border-bottom: 1px solid var(--border); }
+.panel-tab { flex: 1; padding: 8px; text-align: center; font-size: 11px; cursor: pointer; color: var(--text3); border-bottom: 2px solid transparent; transition: all 0.15s; }
+.panel-tab:hover { color: var(--text2); }
+.panel-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.panel-content { flex: 1; overflow-y: auto; padding: 12px; }
+.prop-group { margin-bottom: 12px; }
+.prop-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+.prop-value { font-size: 12px; color: var(--text); }
+.prop-input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; border-radius: var(--radius); font-size: 12px; outline: none; margin-bottom: 4px; }
+.prop-input:focus { border-color: var(--accent); }
+.prop-input[type=color] { height: 28px; padding: 2px 4px; cursor: pointer; }
+.prop-row { display: flex; gap: 6px; }
+.prop-row .prop-input { flex: 1; }
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.badge-blue { background: rgba(74,144,217,0.2); color: var(--accent2); }
+.badge-green { background: rgba(76,175,80,0.2); color: #81c784; }
+.badge-gray { background: rgba(90,122,153,0.2); color: var(--text3); }
+
+/* ===== MATRIX VIEW ===== */
+#view-matrix { flex-direction: column; overflow: hidden; }
+.matrix-toolbar { padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-shrink: 0; }
+.matrix-toolbar label { font-size: 12px; color: var(--text2); }
+.matrix-toolbar select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 4px 8px; border-radius: var(--radius); font-size: 12px; outline: none; cursor: pointer; }
+.matrix-toolbar select:focus { border-color: var(--accent); }
+.matrix-wrap { flex: 1; overflow: auto; padding: 12px; }
+.matrix-table { border-collapse: collapse; font-size: 11px; }
+.matrix-table th, .matrix-table td { border: 1px solid var(--border); }
+.matrix-table th { background: var(--panel); color: var(--text2); padding: 5px 8px; white-space: nowrap; font-weight: 500; position: sticky; }
+.matrix-table th.col-header { top: 0; z-index: 5; max-width: 100px; overflow: hidden; text-overflow: ellipsis; writing-mode: vertical-rl; transform: rotate(180deg); padding: 8px 5px; min-width: 32px; height: 90px; text-align: left; }
+.matrix-table th.row-header { left: 0; z-index: 6; min-width: 140px; max-width: 200px; background: var(--panel); top: auto; }
+.matrix-table td { text-align: center; padding: 4px; min-width: 32px; transition: background 0.1s; cursor: pointer; }
+.matrix-table td:hover { background: var(--panel2); }
+.matrix-cell-val { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; font-weight: 600; font-size: 11px; }
+.matrix-cell-val.has-val { background: rgba(74,144,217,0.25); color: var(--accent2); }
+.matrix-cell-val.high { background: rgba(74,144,217,0.5); }
+.matrix-cell-val.very-high { background: rgba(74,144,217,0.8); color: #fff; }
+.matrix-corner { position: sticky; top: 0; left: 0; z-index: 7; background: var(--panel); }
+.matrix-legend { padding: 8px 12px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); display: flex; gap: 16px; align-items: center; }
+
+/* ===== CATALOG VIEWS ===== */
+#view-models, #view-notations, #view-types { flex-direction: column; overflow: hidden; }
+.catalog-header { padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.catalog-header h2 { font-size: 15px; font-weight: 600; }
+.catalog-header input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: var(--radius); font-size: 12px; outline: none; }
+.catalog-header input:focus { border-color: var(--accent); }
+.catalog-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.catalog-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s; display: flex; align-items: center; gap: 12px; }
+.catalog-card:hover { border-color: var(--accent); background: var(--panel2); }
+.catalog-card .cc-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.catalog-card .cc-info { flex: 1; min-width: 0; }
+.catalog-card .cc-name { font-size: 13px; font-weight: 500; }
+.catalog-card .cc-meta { color: var(--text2); font-size: 11px; margin-top: 3px; }
+.catalog-card .cc-right { text-align: right; flex-shrink: 0; }
+.catalog-card .cc-version { font-size: 11px; color: var(--text3); }
+.catalog-card .cc-actions { display: flex; gap: 5px; margin-top: 6px; }
+.cc-btn { padding: 3px 10px; border-radius: var(--radius); font-size: 11px; border: 1px solid var(--border); background: var(--bg); color: var(--text2); cursor: pointer; transition: all 0.15s; }
+.cc-btn:hover { border-color: var(--accent); color: var(--accent); }
+.cc-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.cc-btn.primary:hover { background: var(--accent2); }
+
+/* ===== DOCS VIEW ===== */
+#view-docs { flex-direction: column; overflow: hidden; }
+.docs-layout { display: flex; flex: 1; overflow: hidden; }
+.docs-nav { width: 200px; border-right: 1px solid var(--border); padding: 12px 0; overflow-y: auto; flex-shrink: 0; background: var(--panel); }
+.docs-nav a { display: block; padding: 6px 16px; color: var(--text2); text-decoration: none; font-size: 12px; border-left: 2px solid transparent; transition: all 0.15s; }
+.docs-nav a:hover { color: var(--text); }
+.docs-nav a.active { color: var(--accent); border-left-color: var(--accent); background: var(--bg3); }
+.docs-content { flex: 1; overflow-y: auto; padding: 24px 32px; }
+.docs-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.docs-content h2 { font-size: 16px; font-weight: 600; margin: 20px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.docs-content h3 { font-size: 13px; font-weight: 600; margin: 14px 0 6px; color: var(--text2); }
+.docs-content p { color: var(--text2); line-height: 1.7; margin-bottom: 10px; font-size: 13px; }
+.docs-content ul, .docs-content ol { padding-left: 20px; color: var(--text2); line-height: 1.8; font-size: 13px; margin-bottom: 10px; }
+.docs-content code { background: var(--panel2); padding: 2px 6px; border-radius: 4px; font-family: var(--mono); font-size: 12px; color: var(--accent2); }
+.docs-content pre { background: var(--panel2); padding: 12px; border-radius: var(--radius); overflow-x: auto; margin-bottom: 10px; border: 1px solid var(--border); }
+.docs-content pre code { background: none; padding: 0; }
+.docs-content table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; }
+.docs-content table th { background: var(--panel); padding: 6px 10px; text-align: left; color: var(--text2); border: 1px solid var(--border); }
+.docs-content table td { padding: 6px 10px; border: 1px solid var(--border); color: var(--text2); }
+.callout { background: rgba(74,144,217,0.1); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: 10px; font-size: 13px; color: var(--text2); }
+
+/* ===== LOG AREA ===== */
+.log-header { display: flex; align-items: center; padding: 4px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); gap: 8px; flex-shrink: 0; }
+.log-header span { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+.log-body { flex: 1; overflow-y: auto; padding: 4px 10px; font-family: var(--mono); font-size: 11px; }
+.log-entry { padding: 1px 0; line-height: 1.5; border-bottom: 1px solid rgba(45,74,106,0.3); }
+.log-entry:last-child { border-bottom: none; }
+.log-ts { color: var(--text3); margin-right: 8px; }
+.log-info { color: var(--accent2); }
+.log-warn { color: var(--yellow); }
+.log-error { color: var(--red); }
+.log-success { color: var(--green); }
+.log-clear { margin-left: auto; background: transparent; border: none; color: var(--text3); cursor: pointer; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+.log-clear:hover { color: var(--text); background: var(--border); }
+
+/* ===== MODAL ===== */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; min-width: 340px; max-width: 90vw; box-shadow: var(--shadow); }
+.modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.btn { padding: 6px 14px; border-radius: var(--radius); font-size: 12px; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost { background: transparent; color: var(--text2); }
+.btn-ghost:hover { background: var(--border); color: var(--text); }
+.btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
+.btn-danger:hover { background: rgba(244,67,54,0.1); }
+
+/* ===== PALETTE ===== */
+.palette { padding: 8px; border-top: 1px solid var(--border); }
+.palette-title { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 4px 6px; }
+.palette-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+.palette-item { width: 52px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: grab; padding: 5px 4px; border-radius: 4px; transition: background 0.1s; border: 1px solid transparent; }
+.palette-item:hover { background: var(--panel2); border-color: var(--border); }
+.palette-item:active { cursor: grabbing; }
+.palette-shape { width: 36px; height: 24px; border-radius: 3px; border: 1.5px solid; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.palette-name { font-size: 9px; color: var(--text3); text-align: center; line-height: 1.2; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+/* ===== TOOLTIP ===== */
+[data-tip] { position: relative; }
+[data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 4px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap; z-index: 999; pointer-events: none; }
+
+/* ===== CONTEXT MENU ===== */
+#ctx-menu { display: none; position: fixed; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); z-index: 2000; min-width: 160px; padding: 4px 0; }
+#ctx-menu.open { display: block; }
+.ctx-item { padding: 7px 14px; font-size: 12px; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.ctx-item:hover { background: var(--bg3); color: var(--accent); }
+.ctx-item.danger:hover { background: rgba(244,67,54,0.15); color: var(--red); }
+.ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* ===== SELECTION HANDLES ===== */
+.sel-handle { position: absolute; width: 8px; height: 8px; background: var(--accent); border: 1.5px solid #fff; border-radius: 2px; cursor: nwse-resize; }
+
+/* ===== NOTIFICATION ===== */
+#notif { position: fixed; bottom: calc(var(--log-h) + 12px); right: 14px; display: flex; flex-direction: column; gap: 6px; z-index: 3000; }
+.notif-item { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 14px; font-size: 12px; box-shadow: var(--shadow); max-width: 300px; animation: slideIn 0.2s ease; }
+.notif-item.success { border-left: 3px solid var(--green); }
+.notif-item.error { border-left: 3px solid var(--red); }
+.notif-item.info { border-left: 3px solid var(--accent); }
+@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  #sidebar { width: 180px; }
+  #right-panel { display: none; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .home-cols { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="app">
+<div id="header">
+  <div class="logo" onclick="showView('home')">wArchi <span>v1.0.0</span></div>
+  <div class="header-sep"></div>
+  <div class="header-nav">
+    <button class="nav-btn active" id="nav-home" onclick="showView('home')">Главная</button>
+    <button class="nav-btn" id="nav-models" onclick="showView('models')">Модели</button>
+    <button class="nav-btn" id="nav-notations" onclick="showView('notations')">Нотации</button>
+    <button class="nav-btn" id="nav-types" onclick="showView('types')">Типы</button>
+    <button class="nav-btn" id="nav-matrix" onclick="showView('matrix')">Матрица связей</button>
+    <button class="nav-btn" id="nav-docs" onclick="showView('docs')">Документация</button>
+  </div>
+  <div class="header-right">
+    <button class="icon-btn" onclick="exportModel()" data-tip="Экспорт JSON">💾</button>
+    <button class="icon-btn" onclick="importModel()" data-tip="Импорт JSON">📂</button>
+    <div class="user-badge">user1</div>
+  </div>
+</div>
+
+<!-- Main area -->
+<div id="main-area">
+
+  <!-- Sidebar (shown in editor view) -->
+  <div id="sidebar" style="display:none">
+    <div id="sidebar-resize"></div>
+    <div class="sidebar-header">
+      <span id="sidebar-title">Структура модели</span>
+      <button class="icon-btn" onclick="showAddNodeModal()" style="font-size:16px; padding:2px 6px;" data-tip="Добавить узел">+</button>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" placeholder="Поиск..." id="tree-search" oninput="filterTree(this.value)">
+    </div>
+    <div class="tree" id="model-tree"></div>
+    <div class="palette" id="palette-area">
+      <div class="palette-title">Компоненты</div>
+      <div class="palette-grid" id="palette-grid"></div>
+    </div>
+  </div>
+
+  <!-- Content area -->
+  <div id="content">
+
+    <!-- HOME VIEW -->
+    <div class="view active" id="view-home">
+      <div class="home-title">Добро пожаловать в wArchi</div>
+      <div class="home-subtitle">Репозиторий архитектуры предприятия · Пользователь: <strong>user1</strong></div>
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="home-cols">
+        <div>
+          <div class="section-title">Последние модели</div>
+          <div class="entity-list" id="recent-models"></div>
+        </div>
+        <div>
+          <div class="section-title">История изменений</div>
+          <div class="changelog" id="changelog"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODELS CATALOG -->
+    <div class="view" id="view-models">
+      <div class="catalog-header">
+        <h2>Модели</h2>
+        <input type="text" placeholder="Поиск модели..." id="models-search" oninput="renderModelsCatalog(this.value)">
+        <button class="cc-btn primary" onclick="showCreateModelModal()">+ Создать модель</button>
+      </div>
+      <div class="catalog-list" id="models-list"></div>
+    </div>
+
+    <!-- NOTATIONS CATALOG -->
+    <div class="view" id="view-notations">
+      <div class="catalog-header">
+        <h2>Нотации</h2>
+        <input type="text" placeholder="Поиск нотации..." id="notations-search" oninput="renderNotationsCatalog(this.value)">
+      </div>
+      <div class="catalog-list" id="notations-list"></div>
+    </div>
+
+    <!-- TYPES CATALOG -->
+    <div class="view" id="view-types">
+      <div class="catalog-header">
+        <h2>Типы узлов и связей</h2>
+        <input type="text" placeholder="Поиск..." id="types-search" oninput="renderTypesCatalog(this.value)">
+        <button class="cc-btn primary" onclick="showAddTypeModal()">+ Добавить тип</button>
+      </div>
+      <div class="catalog-list" id="types-list"></div>
+    </div>
+
+    <!-- RELATION MATRIX -->
+    <div class="view" id="view-matrix">
+      <div class="matrix-toolbar">
+        <label>Модель: <select id="matrix-model-sel" onchange="buildMatrix()"></select></label>
+        <label>Режим: <select id="matrix-mode" onchange="buildMatrix()">
+          <option value="types">По типам</option>
+          <option value="notation">По нотации</option>
+        </select></label>
+        <label>Тепловая карта: <input type="checkbox" id="matrix-heatmap" onchange="buildMatrix()"></label>
+        <label>Скрыть пустые: <input type="checkbox" id="matrix-hide-empty" onchange="buildMatrix()"></label>
+        <button class="cc-btn" onclick="exportMatrixCSV()">📥 CSV</button>
+        <button class="cc-btn" onclick="exportMatrixPNG()">🖼 PNG</button>
+      </div>
+      <div class="matrix-wrap" id="matrix-wrap">
+        <div style="color:var(--text3); padding:20px; font-size:13px;">Выберите модель для отображения матрицы</div>
+      </div>
+      <div class="matrix-legend">
+        <span>Матрица связей компонентов — показывает количество связей между типами узлов</span>
+        <span style="margin-left:auto">Выберите ячейку для просмотра деталей</span>
+      </div>
+    </div>
+
+    <!-- EDITOR VIEW -->
+    <div class="view" id="view-editor">
+      <div id="canvas-area" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <div class="diagram-tabs" id="diagram-tabs"></div>
+        <div style="flex:1;position:relative;overflow:hidden;">
+          <canvas id="diagram-canvas"></canvas>
+          <div class="canvas-toolbar">
+            <button onclick="zoomIn()" data-tip="Приблизить">+</button>
+            <button onclick="zoomOut()" data-tip="Отдалить">−</button>
+            <button onclick="zoomFit()" data-tip="По размеру">⊡</button>
+            <div class="sep"></div>
+            <button id="btn-grid" onclick="toggleGrid()" data-tip="Сетка" class="active">⊞</button>
+            <button id="btn-snap" onclick="toggleSnap()" data-tip="Привязка к сетке" class="active">🧲</button>
+            <div class="sep"></div>
+            <button onclick="addNodeFromToolbar()" data-tip="Добавить узел">＋ Узел</button>
+            <button onclick="addLinkFromToolbar()" data-tip="Добавить связь">⟶ Связь</button>
+            <div class="sep"></div>
+            <button onclick="exportDiagramSVG()" data-tip="Экспорт SVG">SVG</button>
+            <button onclick="exportDiagramPNG()" data-tip="Экспорт PNG">PNG</button>
+          </div>
+          <div class="canvas-info" id="canvas-info">Масштаб: 100% | Узлов: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCS VIEW -->
+    <div class="view" id="view-docs">
+      <div class="docs-layout">
+        <nav class="docs-nav" id="docs-nav"></nav>
+        <div class="docs-content" id="docs-content"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- Right panel -->
+  <div id="right-panel" style="display:none">
+    <div id="right-panel-resize"></div>
+    <div class="panel-tabs">
+      <div class="panel-tab active" onclick="showPanelTab('props')" id="ptab-props">Свойства</div>
+      <div class="panel-tab" onclick="showPanelTab('style')" id="ptab-style">Стиль</div>
+      <div class="panel-tab" onclick="showPanelTab('trace')" id="ptab-trace">Трасс.</div>
+    </div>
+    <div class="panel-content" id="panel-props">
+      <div style="color:var(--text3);font-size:12px;text-align:center;padding:20px 0;">Выберите элемент на диаграмме</div>
+    </div>
+    <div class="panel-content" id="panel-style" style="display:none"></div>
+    <div class="panel-content" id="panel-trace" style="display:none"></div>
+  </div>
+
+</div><!-- /main-area -->
+
+<!-- Log area -->
+<div id="log-area">
+  <div id="log-resize-handle"></div>
+  <div class="log-header">
+    <span>Лог событий</span>
+    <button class="log-clear" onclick="clearLog()">Очистить</button>
+  </div>
+  <div class="log-body" id="log-body"></div>
+  <div id="log-corner"></div>
+</div>
+
+</div><!-- /app -->
+
+<!-- Modals -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<!-- Context menu -->
+<div id="ctx-menu"></div>
+
+<!-- Notifications -->
+<div id="notif"></div>
+
+<!-- Hidden import input -->
+<input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<script>
+/* ================================================================
+   wArchi Browser — Single-file SPA
+   No backend, localStorage persistence, Canvas-based diagram editor
+   User: user1 (hardcoded, no auth)
+   ================================================================ */
+
+// ===================== STATE =====================
+const STATE = {
+  currentView: 'home',
+  currentModelId: null,
+  currentDiagramId: null,
+  selectedNodeId: null,
+  selectedLinkId: null,
+  zoom: 1,
+  panX: 0,
+  panY: 0,
+  showGrid: true,
+  snapToGrid: true,
+  gridSize: 20,
+  isDragging: false,
+  dragTarget: null,
+  dragOffX: 0,
+  dragOffY: 0,
+  isPanning: false,
+  panStartX: 0,
+  panStartY: 0,
+  isConnecting: false,
+  connectFrom: null,
+  activePanel: 'props',
+  matrixData: null,
+  matrixSelectedCell: null,
+};
+
+// ===================== DATA STORE =====================
+function defaultData() {
+  return {
+    nodeTypes: [
+      { id: 'nt-app', name: 'Приложение', color: '#1565c0', textColor: '#e3f2fd', shape: 'rect', layer: 'Приложение', icon: '📦' },
+      { id: 'nt-svc', name: 'Сервис', color: '#1b5e20', textColor: '#e8f5e9', shape: 'rect-dashed', layer: 'Приложение', icon: '⚙️' },
+      { id: 'nt-iface', name: 'Интерфейс', color: '#0d47a1', textColor: '#e3f2fd', shape: 'circle', layer: 'Приложение', icon: '🔌' },
+      { id: 'nt-proc', name: 'Бизнес-процесс', color: '#4a148c', textColor: '#f3e5f5', shape: 'rect', layer: 'Бизнес', icon: '📋' },
+      { id: 'nt-role', name: 'Роль', color: '#880e4f', textColor: '#fce4ec', shape: 'oval', layer: 'Бизнес', icon: '👤' },
+      { id: 'nt-data', name: 'Объект данных', color: '#e65100', textColor: '#fff3e0', shape: 'rect', layer: 'Данные', icon: '🗄️' },
+      { id: 'nt-infra', name: 'Инфраструктура', color: '#37474f', textColor: '#eceff1', shape: 'rect', layer: 'Инфраструктура', icon: '🖥️' },
+      { id: 'nt-actor', name: 'Актор', color: '#bf360c', textColor: '#fbe9e7', shape: 'oval', layer: 'Бизнес', icon: '🤝' },
+      { id: 'nt-goal', name: 'Цель', color: '#1a237e', textColor: '#e8eaf6', shape: 'diamond', layer: 'Мотивация', icon: '🎯' },
+      { id: 'nt-driver', name: 'Драйвер', color: '#311b92', textColor: '#ede7f6', shape: 'rect', layer: 'Мотивация', icon: '🚀' },
+    ],
+    linkTypes: [
+      { id: 'lt-flow', name: 'Поток данных', style: 'solid', color: '#4a90d9', arrow: 'end' },
+      { id: 'lt-trigger', name: 'Триггер', style: 'dashed', color: '#ff9800', arrow: 'end' },
+      { id: 'lt-assoc', name: 'Ассоциация', style: 'solid', color: '#78909c', arrow: 'none' },
+      { id: 'lt-compose', name: 'Композиция', style: 'solid', color: '#4a90d9', arrow: 'diamond' },
+      { id: 'lt-real', name: 'Реализация', style: 'dashed', color: '#4caf50', arrow: 'end' },
+      { id: 'lt-assign', name: 'Назначение', style: 'solid', color: '#9c27b0', arrow: 'end' },
+      { id: 'lt-access', name: 'Доступ', style: 'dashed', color: '#f44336', arrow: 'end' },
+    ],
+    notations: [
+      { id: 'n-archimate', name: 'ArchiMate 3.2', description: 'Стандарт архитектурного описания предприятия', color: '#1565c0', icon: '🏛️', version: '3.2.0', isBuiltIn: true },
+      { id: 'n-c4', name: 'C4 Model', description: 'Диаграммы контекста, контейнеров, компонентов и кода', color: '#1b5e20', icon: '📐', version: '1.0.0', isBuiltIn: true },
+      { id: 'n-bpmn', name: 'BPMN 2.0', description: 'Нотация моделирования бизнес-процессов', color: '#4a148c', icon: '🔄', version: '2.0.0', isBuiltIn: true },
+      { id: 'n-uml', name: 'UML', description: 'Унифицированный язык моделирования', color: '#880e4f', icon: '📊', version: '2.5.0', isBuiltIn: true },
+    ],
+    models: [],
+    nodes: [],
+    links: [],
+    diagrams: [],
+    changelog: [
+      { version: 'v1.0.0', text: 'Браузерная версия wArchi запущена', date: '2026-05-05' },
+      { version: 'v0.9.0', text: 'Добавлена матрица связей компонентов', date: '2026-04-28' },
+      { version: 'v0.8.0', text: 'Поддержка ArchiMate 3.2 и C4 Model', date: '2026-04-01' },
+    ],
+  };
+}
+
+let DB = loadDB();
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem('warchi_db');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Ensure all keys exist (merge with defaults for new keys)
+      const def = defaultData();
+      for (const k of Object.keys(def)) {
+        if (!(k in parsed)) parsed[k] = def[k];
+      }
+      return parsed;
+    }
+  } catch(e) { log('error', 'Ошибка загрузки данных: ' + e.message); }
+  const d = defaultData();
+  createTestModel(d);
+  return d;
+}
+
+function saveDB() {
+  try {
+    localStorage.setItem('warchi_db', JSON.stringify(DB));
+  } catch(e) { log('error', 'Ошибка сохранения: ' + e.message); }
+}
+
+function createTestModel(db) {
+  const modelId = 'model-test';
+  const diagId = 'diag-main';
+  db.models.push({
+    id: modelId, name: 'Тестовая модель', description: 'Демонстрационная модель ArchiMate с компонентами различных слоёв',
+    version: '1.3.0', notationId: 'n-archimate', createdAt: '2026-01-15', updatedAt: '2026-05-05',
+    ownerId: 'user1',
+  });
+  // Nodes
+  const nodes = [
+    { id: 'n1', name: 'Портал клиента',      modelId, nodeTypeId: 'nt-app',    parentNodeId: null, x: 80,  y: 80,  w: 140, h: 60,  layer: 'Приложение' },
+    { id: 'n2', name: 'API Gateway',          modelId, nodeTypeId: 'nt-svc',    parentNodeId: null, x: 280, y: 80,  w: 140, h: 60,  layer: 'Приложение' },
+    { id: 'n3', name: 'Сервис авторизации',   modelId, nodeTypeId: 'nt-svc',    parentNodeId: null, x: 480, y: 80,  w: 140, h: 60,  layer: 'Приложение' },
+    { id: 'n4', name: 'Бизнес-логика',        modelId, nodeTypeId: 'nt-app',    parentNodeId: null, x: 280, y: 200, w: 140, h: 60,  layer: 'Приложение' },
+    { id: 'n5', name: 'Менеджер заказов',     modelId, nodeTypeId: 'nt-proc',   parentNodeId: null, x: 80,  y: 310, w: 140, h: 60,  layer: 'Бизнес' },
+    { id: 'n6', name: 'Клиент',               modelId, nodeTypeId: 'nt-actor',  parentNodeId: null, x: 480, y: 310, w: 140, h: 60,  layer: 'Бизнес' },
+    { id: 'n7', name: 'База данных клиентов', modelId, nodeTypeId: 'nt-data',   parentNodeId: null, x: 80,  y: 420, w: 160, h: 60,  layer: 'Данные' },
+    { id: 'n8', name: 'База данных заказов',  modelId, nodeTypeId: 'nt-data',   parentNodeId: null, x: 280, y: 420, w: 160, h: 60,  layer: 'Данные' },
+    { id: 'n9', name: 'Сервер приложений',    modelId, nodeTypeId: 'nt-infra',  parentNodeId: null, x: 480, y: 420, w: 140, h: 60,  layer: 'Инфраструктура' },
+    { id:'n10', name: 'Повышение продаж',      modelId, nodeTypeId: 'nt-goal',   parentNodeId: null, x: 680, y: 80,  w: 130, h: 60,  layer: 'Мотивация' },
+    { id:'n11', name: 'Интерфейс REST',        modelId, nodeTypeId: 'nt-iface',  parentNodeId: null, x: 680, y: 200, w: 130, h: 60,  layer: 'Приложение' },
+    { id:'n12', name: 'Роль менеджера',        modelId, nodeTypeId: 'nt-role',   parentNodeId: null, x: 280, y: 310, w: 140, h: 60,  layer: 'Бизнес' },
+    { id:'n13', name: 'Цифровизация',          modelId, nodeTypeId: 'nt-driver', parentNodeId: null, x: 680, y: 310, w: 130, h: 60,  layer: 'Мотивация' },
+    { id:'n14', name: 'Уведомления',           modelId, nodeTypeId: 'nt-svc',    parentNodeId: null, x: 480, y: 200, w: 140, h: 60,  layer: 'Приложение' },
+  ];
+  db.nodes.push(...nodes);
+  // Links
+  const links = [
+    { id:'l1', modelId, sourceId:'n1', targetId:'n2', linkTypeId:'lt-flow', label:'HTTP' },
+    { id:'l2', modelId, sourceId:'n2', targetId:'n3', linkTypeId:'lt-trigger', label:'' },
+    { id:'l3', modelId, sourceId:'n2', targetId:'n4', linkTypeId:'lt-flow', label:'REST' },
+    { id:'l4', modelId, sourceId:'n4', targetId:'n5', linkTypeId:'lt-real', label:'' },
+    { id:'l5', modelId, sourceId:'n5', targetId:'n7', linkTypeId:'lt-access', label:'чтение' },
+    { id:'l6', modelId, sourceId:'n5', targetId:'n8', linkTypeId:'lt-access', label:'запись' },
+    { id:'l7', modelId, sourceId:'n3', targetId:'n7', linkTypeId:'lt-access', label:'' },
+    { id:'l8', modelId, sourceId:'n6', targetId:'n1', linkTypeId:'lt-assoc', label:'использует' },
+    { id:'l9', modelId, sourceId:'n4', targetId:'n9', linkTypeId:'lt-assign', label:'' },
+    { id:'l10',modelId, sourceId:'n2', targetId:'n11', linkTypeId:'lt-real', label:'' },
+    { id:'l11',modelId, sourceId:'n12', targetId:'n5', linkTypeId:'lt-assign', label:'' },
+    { id:'l12',modelId, sourceId:'n10', targetId:'n13', linkTypeId:'lt-assoc', label:'' },
+    { id:'l13',modelId, sourceId:'n4', targetId:'n14', linkTypeId:'lt-trigger', label:'событие' },
+    { id:'l14',modelId, sourceId:'n14', targetId:'n6', linkTypeId:'lt-flow', label:'push' },
+  ];
+  db.links.push(...links);
+  // Diagrams
+  db.diagrams.push({
+    id: diagId, modelId, name: 'Согласование с мейнфреймом', notationId: 'n-archimate',
+    description: 'Основная диаграмма взаимодействия компонентов',
+  });
+  db.diagrams.push({
+    id: 'diag-biz', modelId, name: 'Бизнес-слой', notationId: 'n-archimate',
+    description: 'Диаграмма бизнес-компонентов',
+  });
+}
+
+// ===================== LOG =====================
+function log(level, msg) {
+  const body = document.getElementById('log-body');
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-ts">${ts}</span><span class="log-${level}">${escHtml(msg)}</span>`;
+  body.appendChild(entry);
+  body.scrollTop = body.scrollHeight;
+}
+function clearLog() { document.getElementById('log-body').innerHTML = ''; }
+
+// ===================== NOTIFICATIONS =====================
+function notify(msg, type='info', dur=3000) {
+  const c = document.getElementById('notif');
+  const el = document.createElement('div');
+  el.className = `notif-item ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), dur);
+}
+
+// ===================== UTILS =====================
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function uid() { return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function getModel(id) { return DB.models.find(m => m.id === id); }
+function getNodes(modelId) { return DB.nodes.filter(n => n.modelId === modelId); }
+function getLinks(modelId) { return DB.links.filter(l => l.modelId === modelId); }
+function getDiagrams(modelId) { return DB.diagrams.filter(d => d.modelId === modelId); }
+function getNodeType(id) { return DB.nodeTypes.find(t => t.id === id); }
+function getLinkType(id) { return DB.linkTypes.find(t => t.id === id); }
+
+// ===================== VIEWS =====================
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const v = document.getElementById('view-' + name);
+  if (v) v.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById('nav-' + name);
+  if (nb) nb.classList.add('active');
+  STATE.currentView = name;
+
+  const sidebar = document.getElementById('sidebar');
+  const rightPanel = document.getElementById('right-panel');
+
+  if (name === 'editor') {
+    sidebar.style.display = 'flex';
+    sidebar.style.flexDirection = 'column';
+    rightPanel.style.display = 'flex';
+    rightPanel.style.flexDirection = 'column';
+    renderModelTree();
+    renderPalette();
+    renderDiagramTabs();
+    requestAnimationFrame(redrawCanvas);
+  } else {
+    sidebar.style.display = 'none';
+    rightPanel.style.display = 'none';
+  }
+  if (name === 'home') renderHome();
+  if (name === 'models') renderModelsCatalog('');
+  if (name === 'notations') renderNotationsCatalog('');
+  if (name === 'types') renderTypesCatalog('');
+  if (name === 'matrix') buildMatrixSelectors();
+  if (name === 'docs') renderDocs('overview');
+  log('info', `Переход на: ${name}`);
+}
+
+// ===================== HOME =====================
+function renderHome() {
+  const models = DB.models;
+  const nodes = DB.nodes;
+  const links = DB.links;
+  const diagrams = DB.diagrams;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="num">${models.length}</div><div class="label">Моделей</div></div>
+    <div class="stat-card"><div class="num">${diagrams.length}</div><div class="label">Диаграмм</div></div>
+    <div class="stat-card"><div class="num">${nodes.length}</div><div class="label">Узлов</div></div>
+    <div class="stat-card"><div class="num">${links.length}</div><div class="label">Связей</div></div>
+  `;
+  document.getElementById('recent-models').innerHTML = models.slice(-5).reverse().map(m => {
+    const nt = DB.notations.find(n => n.id === m.notationId);
+    return `<div class="entity-row" onclick="openModel('${m.id}')">
+      <div class="entity-icon" style="background:rgba(74,144,217,0.15)">${nt ? nt.icon : '📐'}</div>
+      <div>
+        <div class="entity-name">${escHtml(m.name)}</div>
+        <div class="entity-meta">${nt ? nt.name : ''} · ${getNodes(m.id).length} узлов</div>
+      </div>
+      <span class="entity-badge">${m.version}</span>
+    </div>`;
+  }).join('') || '<div style="color:var(--text3);font-size:12px;padding:10px 0;">Нет моделей. <span style="color:var(--accent);cursor:pointer" onclick="showCreateModelModal()">Создать модель</span></div>';
+
+  document.getElementById('changelog').innerHTML = DB.changelog.map(c =>
+    `<div class="changelog-item">
+       <span class="cl-version">${c.version}</span>
+       <span class="cl-text">${escHtml(c.text)}</span>
+       <span class="cl-date">${c.date}</span>
+     </div>`
+  ).join('');
+}
+
+// ===================== MODELS CATALOG =====================
+function renderModelsCatalog(q='') {
+  const list = document.getElementById('models-list');
+  const filtered = DB.models.filter(m => !q || m.name.toLowerCase().includes(q.toLowerCase()));
+  if (!filtered.length) { list.innerHTML = '<div style="color:var(--text3);padding:20px;">Модели не найдены</div>'; return; }
+  list.innerHTML = filtered.map(m => {
+    const nt = DB.notations.find(n => n.id === m.notationId);
+    const nc = getNodes(m.id).length;
+    const lc = getLinks(m.id).length;
+    return `<div class="catalog-card">
+      <div class="cc-icon" style="background:rgba(74,144,217,0.15);color:var(--accent)">${nt ? nt.icon : '📐'}</div>
+      <div class="cc-info">
+        <div class="cc-name">${escHtml(m.name)}</div>
+        <div class="cc-meta">${nt ? nt.name : 'Без нотации'} · ${nc} узлов · ${lc} связей · ${getDiagrams(m.id).length} диаграмм</div>
+        <div class="cc-actions">
+          <button class="cc-btn primary" onclick="openModel('${m.id}')">Открыть</button>
+          <button class="cc-btn" onclick="openMatrixForModel('${m.id}')">Матрица</button>
+          <button class="cc-btn" onclick="deleteModel('${m.id}')">Удалить</button>
+        </div>
+      </div>
+      <div class="cc-right">
+        <div class="cc-version">${m.version}</div>
+        <div style="color:var(--text3);font-size:10px;margin-top:4px;">${m.updatedAt || ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openMatrixForModel(modelId) {
+  showView('matrix');
+  STATE.currentModelId = modelId;
+  buildMatrixSelectors();
+}
+
+function deleteModel(modelId) {
+  if (!confirm('Удалить модель? Это действие необратимо.')) return;
+  DB.models = DB.models.filter(m => m.id !== modelId);
+  DB.nodes = DB.nodes.filter(n => n.modelId !== modelId);
+  DB.links = DB.links.filter(l => l.modelId !== modelId);
+  DB.diagrams = DB.diagrams.filter(d => d.modelId !== modelId);
+  saveDB();
+  log('warn', `Модель удалена: ${modelId}`);
+  notify('Модель удалена', 'info');
+  renderModelsCatalog(document.getElementById('models-search').value);
+}
+
+// ===================== NOTATIONS CATALOG =====================
+function renderNotationsCatalog(q='') {
+  const list = document.getElementById('notations-list');
+  const filtered = DB.notations.filter(n => !q || n.name.toLowerCase().includes(q.toLowerCase()));
+  list.innerHTML = filtered.map(n =>
+    `<div class="catalog-card">
+      <div class="cc-icon" style="background:rgba(74,144,217,0.1)">${n.icon}</div>
+      <div class="cc-info">
+        <div class="cc-name">${escHtml(n.name)}</div>
+        <div class="cc-meta">${escHtml(n.description || '')}</div>
+        <div class="cc-actions"><span class="badge badge-${n.isBuiltIn ? 'blue' : 'green'}">${n.isBuiltIn ? 'Встроенная' : 'Пользовательская'}</span></div>
+      </div>
+      <div class="cc-right"><div class="cc-version">${n.version}</div></div>
+    </div>`
+  ).join('');
+}
+
+// ===================== TYPES CATALOG =====================
+function renderTypesCatalog(q='') {
+  const list = document.getElementById('types-list');
+  const allTypes = [
+    ...DB.nodeTypes.map(t => ({ ...t, kind: 'node' })),
+    ...DB.linkTypes.map(t => ({ ...t, kind: 'link' })),
+  ].filter(t => !q || t.name.toLowerCase().includes(q.toLowerCase()));
+  list.innerHTML = allTypes.map(t =>
+    `<div class="catalog-card">
+      <div class="cc-icon" style="background:${t.color || 'var(--panel2)'}20;color:${t.color || 'var(--text)'};">${t.kind === 'node' ? (t.icon || '◼') : '→'}</div>
+      <div class="cc-info">
+        <div class="cc-name">${escHtml(t.name)}</div>
+        <div class="cc-meta">${t.kind === 'node' ? `Слой: ${t.layer || '—'} · Форма: ${t.shape || 'rect'}` : `Стиль: ${t.style || 'solid'} · Стрелка: ${t.arrow || 'end'}`}</div>
+      </div>
+      <div class="cc-right"><span class="badge badge-${t.kind === 'node' ? 'blue' : 'gray'}">${t.kind === 'node' ? 'Тип узла' : 'Тип связи'}</span></div>
+    </div>`
+  ).join('');
+}
+
+// ===================== OPEN MODEL (EDITOR) =====================
+function openModel(modelId) {
+  STATE.currentModelId = modelId;
+  const diags = getDiagrams(modelId);
+  STATE.currentDiagramId = diags.length ? diags[0].id : null;
+  STATE.selectedNodeId = null;
+  STATE.selectedLinkId = null;
+  STATE.zoom = 1; STATE.panX = 40; STATE.panY = 40;
+  showView('editor');
+  log('success', `Открыта модель: ${getModel(modelId)?.name}`);
+}
+
+// ===================== CANVAS SETUP =====================
+let canvas, ctx, canvasEl;
+function initCanvas() {
+  canvasEl = document.getElementById('diagram-canvas');
+  ctx = canvasEl.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  canvasEl.addEventListener('mousedown', onCanvasMouseDown);
+  canvasEl.addEventListener('mousemove', onCanvasMouseMove);
+  canvasEl.addEventListener('mouseup', onCanvasMouseUp);
+  canvasEl.addEventListener('wheel', onCanvasWheel, { passive: false });
+  canvasEl.addEventListener('contextmenu', onCanvasContextMenu);
+  canvasEl.addEventListener('dblclick', onCanvasDblClick);
+}
+
+function resizeCanvas() {
+  const area = canvasEl.parentElement;
+  canvasEl.width = area.clientWidth;
+  canvasEl.height = area.clientHeight;
+  redrawCanvas();
+}
+
+// ===================== DIAGRAM TABS =====================
+function renderDiagramTabs() {
+  if (!STATE.currentModelId) return;
+  const diags = getDiagrams(STATE.currentModelId);
+  const tabs = document.getElementById('diagram-tabs');
+  tabs.innerHTML = diags.map(d =>
+    `<div class="diagram-tab ${d.id === STATE.currentDiagramId ? 'active' : ''}" onclick="switchDiagram('${d.id}')">
+       ${escHtml(d.name)}
+       <span class="tab-close" onclick="event.stopPropagation();deleteDiagram('${d.id}')">✕</span>
+     </div>`
+  ).join('') + `<div class="tab-add" onclick="showAddDiagramModal()" data-tip="Новая диаграмма">＋</div>`;
+}
+
+function switchDiagram(diagId) {
+  STATE.currentDiagramId = diagId;
+  STATE.selectedNodeId = null;
+  STATE.selectedLinkId = null;
+  renderDiagramTabs();
+  redrawCanvas();
+  updatePropsPanel();
+}
+
+function deleteDiagram(diagId) {
+  if (!confirm('Удалить диаграмму?')) return;
+  DB.diagrams = DB.diagrams.filter(d => d.id !== diagId);
+  if (STATE.currentDiagramId === diagId) {
+    const diags = getDiagrams(STATE.currentModelId);
+    STATE.currentDiagramId = diags.length ? diags[0].id : null;
+  }
+  saveDB();
+  renderDiagramTabs();
+  redrawCanvas();
+}
+
+// ===================== DRAWING =====================
+const NODE_COLORS = {
+  'nt-app':    { fill: '#1565c0', stroke: '#42a5f5', text: '#e3f2fd' },
+  'nt-svc':    { fill: '#1b5e20', stroke: '#66bb6a', text: '#e8f5e9' },
+  'nt-iface':  { fill: '#0d47a1', stroke: '#64b5f6', text: '#e3f2fd' },
+  'nt-proc':   { fill: '#4a148c', stroke: '#ce93d8', text: '#f3e5f5' },
+  'nt-role':   { fill: '#880e4f', stroke: '#f48fb1', text: '#fce4ec' },
+  'nt-data':   { fill: '#e65100', stroke: '#ffb74d', text: '#fff3e0' },
+  'nt-infra':  { fill: '#37474f', stroke: '#90a4ae', text: '#eceff1' },
+  'nt-actor':  { fill: '#bf360c', stroke: '#ff8a65', text: '#fbe9e7' },
+  'nt-goal':   { fill: '#1a237e', stroke: '#7986cb', text: '#e8eaf6' },
+  'nt-driver': { fill: '#311b92', stroke: '#b39ddb', text: '#ede7f6' },
+};
+const DEFAULT_NODE_COLOR = { fill: '#1e3a5f', stroke: '#4a90d9', text: '#e0e8f0' };
+
+function redrawCanvas() {
+  if (!ctx) return;
+  const W = canvasEl.width, H = canvasEl.height;
+  ctx.clearRect(0, 0, W, H);
+  // Background
+  ctx.fillStyle = '#12192a';
+  ctx.fillRect(0, 0, W, H);
+  // Grid
+  if (STATE.showGrid) drawGrid(W, H);
+  // Content
+  if (!STATE.currentModelId) {
+    ctx.fillStyle = '#5a7a99';
+    ctx.font = '14px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Выберите модель для отображения диаграммы', W/2, H/2);
+    ctx.textAlign = 'left';
+    return;
+  }
+  const nodes = getNodes(STATE.currentModelId);
+  const links = getLinks(STATE.currentModelId);
+  // Draw links first
+  for (const link of links) {
+    const src = nodes.find(n => n.id === link.sourceId);
+    const tgt = nodes.find(n => n.id === link.targetId);
+    if (src && tgt) drawLink(link, src, tgt);
+  }
+  // Draw nodes
+  for (const node of nodes) {
+    drawNode(node, node.id === STATE.selectedNodeId);
+  }
+  // Draw connecting line
+  if (STATE.isConnecting && STATE.connectFrom && STATE._mouseX !== undefined) {
+    const src = nodes.find(n => n.id === STATE.connectFrom);
+    if (src) {
+      const sx = worldToScreen(src.x + (src.w||140)/2, src.y + (src.h||60)/2);
+      ctx.beginPath();
+      ctx.moveTo(sx.x, sx.y);
+      ctx.lineTo(STATE._mouseX, STATE._mouseY);
+      ctx.strokeStyle = '#4a90d9';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  // Canvas info
+  const nn = nodes.length, nl = links.length;
+  document.getElementById('canvas-info').textContent =
+    `Масштаб: ${Math.round(STATE.zoom*100)}% | Узлов: ${nn} | Связей: ${nl}`;
+}
+
+function drawGrid(W, H) {
+  const g = STATE.gridSize * STATE.zoom;
+  if (g < 8) return;
+  const offX = ((STATE.panX % g) + g) % g;
+  const offY = ((STATE.panY % g) + g) % g;
+  ctx.strokeStyle = 'rgba(74,144,217,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = offX; x < W; x += g) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+  for (let y = offY; y < H; y += g) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+  ctx.stroke();
+  // Major grid lines
+  const mg = g * 5;
+  const mOffX = ((STATE.panX % mg) + mg) % mg;
+  const mOffY = ((STATE.panY % mg) + mg) % mg;
+  ctx.strokeStyle = 'rgba(74,144,217,0.12)';
+  ctx.beginPath();
+  for (let x = mOffX; x < W; x += mg) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+  for (let y = mOffY; y < H; y += mg) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+  ctx.stroke();
+}
+
+function worldToScreen(wx, wy) {
+  return { x: wx * STATE.zoom + STATE.panX, y: wy * STATE.zoom + STATE.panY };
+}
+function screenToWorld(sx, sy) {
+  return { x: (sx - STATE.panX) / STATE.zoom, y: (sy - STATE.panY) / STATE.zoom };
+}
+
+function drawNode(node, selected) {
+  const c = NODE_COLORS[node.nodeTypeId] || DEFAULT_NODE_COLOR;
+  const nt = getNodeType(node.nodeTypeId);
+  const x = node.x * STATE.zoom + STATE.panX;
+  const y = node.y * STATE.zoom + STATE.panY;
+  const w = (node.w || 140) * STATE.zoom;
+  const h = (node.h || 60) * STATE.zoom;
+  const r = 6 * STATE.zoom;
+
+  ctx.save();
+  // Shadow
+  if (selected) { ctx.shadowColor = '#4a90d9'; ctx.shadowBlur = 12; }
+  // Fill
+  ctx.fillStyle = c.fill;
+  roundRect(ctx, x, y, w, h, r);
+  ctx.fill();
+  // Stroke
+  ctx.strokeStyle = selected ? '#64b5f6' : c.stroke;
+  ctx.lineWidth = selected ? 2 : 1;
+  roundRect(ctx, x, y, w, h, r);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  // Header band
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, Math.min(20 * STATE.zoom, h * 0.35), [r, r, 0, 0]);
+  ctx.fill();
+  // Icon + type label in header
+  const iconX = x + 6 * STATE.zoom;
+  const iconY = y + 13 * STATE.zoom;
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = `${Math.max(8, 10 * STATE.zoom)}px Segoe UI`;
+  ctx.fillText(nt ? nt.icon : '◼', iconX, iconY);
+  const typeLabelX = iconX + 18 * STATE.zoom;
+  ctx.font = `${Math.max(7, 9 * STATE.zoom)}px Segoe UI`;
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText(nt ? nt.name : '', typeLabelX, iconY);
+  // Name
+  ctx.fillStyle = c.text;
+  ctx.font = `${Math.max(9, Math.min(13, 11 * STATE.zoom))}px Segoe UI`;
+  ctx.textAlign = 'center';
+  const textY = y + h * 0.65;
+  wrapText(ctx, node.name, x + w/2, textY, w - 10 * STATE.zoom, 14 * STATE.zoom);
+  ctx.textAlign = 'left';
+  // Selection handles
+  if (selected) {
+    const hs = 7 * STATE.zoom;
+    ctx.fillStyle = '#4a90d9';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    [[0,0],[1,0],[0,1],[1,1]].forEach(([hx,hy]) => {
+      ctx.beginPath();
+      ctx.rect(x + hx*w - hs/2, y + hy*h - hs/2, hs, hs);
+      ctx.fill(); ctx.stroke();
+    });
+  }
+  ctx.restore();
+}
+
+function drawLink(link, src, tgt) {
+  const lt = getLinkType(link.linkTypeId);
+  const sx = worldToScreen(src.x + (src.w||140)/2, src.y + (src.h||60)/2);
+  const tx = worldToScreen(tgt.x + (tgt.w||140)/2, tgt.y + (tgt.h||60)/2);
+  const isSelected = link.id === STATE.selectedLinkId;
+
+  ctx.save();
+  ctx.strokeStyle = isSelected ? '#64b5f6' : (lt ? lt.color : '#5ba3e8');
+  ctx.lineWidth = isSelected ? 2.5 : 1.5;
+  if (lt && lt.style === 'dashed') ctx.setLineDash([6*STATE.zoom, 4*STATE.zoom]);
+  else ctx.setLineDash([]);
+
+  // Smart routing: slight curve
+  const dx = tx.x - sx.x, dy = tx.y - sy.y;
+  const mx = (sx.x + tx.x) / 2, my = (sx.y + tx.y) / 2;
+  const cpx = mx - dy * 0.15, cpy = my + dx * 0.15;
+
+  // Edge-to-edge connection (intersect node boundary)
+  const sp = getEdgePoint(src, sx, tx);
+  const tp = getEdgePoint(tgt, tx, sx);
+
+  ctx.beginPath();
+  ctx.moveTo(sp.x, sp.y);
+  ctx.quadraticCurveTo(cpx, cpy, tp.x, tp.y);
+  ctx.stroke();
+
+  // Arrow
+  if (!lt || lt.arrow !== 'none') drawArrow(ctx, cpx, cpy, tp.x, tp.y, ctx.strokeStyle);
+
+  // Label
+  if (link.label) {
+    ctx.fillStyle = 'rgba(18,25,42,0.8)';
+    const fs = Math.max(9, 10 * STATE.zoom);
+    ctx.font = `${fs}px Segoe UI`;
+    const lx = mx - ctx.measureText(link.label).width/2 - 4;
+    const ly = my - fs - 2;
+    ctx.fillRect(lx - 2, ly - 1, ctx.measureText(link.label).width + 8, fs + 4);
+    ctx.fillStyle = '#a0c4e0';
+    ctx.fillText(link.label, lx + 2, ly + fs - 1);
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+// Fix: sy was accidentally referencing outer variable
+// Let me use a better pattern
+const sy_unused = 0;
+
+function getEdgePoint(node, nodeScreenPos, otherScreenPos) {
+  const w = (node.w||140)*STATE.zoom, h = (node.h||60)*STATE.zoom;
+  const nx = node.x*STATE.zoom+STATE.panX, ny = node.y*STATE.zoom+STATE.panY;
+  const cx = nx + w/2, cy = ny + h/2;
+  const dx = otherScreenPos.x - cx, dy = otherScreenPos.y - cy;
+  if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) return { x: cx, y: cy };
+  const scaleX = (w/2) / Math.abs(dx || 0.001);
+  const scaleY = (h/2) / Math.abs(dy || 0.001);
+  const scale = Math.min(scaleX, scaleY);
+  return { x: cx + dx*scale, y: cy + dy*scale };
+}
+
+function drawArrow(ctx, fromX, fromY, toX, toY, color) {
+  const angle = Math.atan2(toY - fromY, toX - fromX);
+  const size = Math.max(8, 10 * STATE.zoom);
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.translate(toX, toY);
+  ctx.rotate(angle);
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-size, -size*0.4);
+  ctx.lineTo(-size, size*0.4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, x, y, maxW, lineH) {
+  const words = text.split(' ');
+  let line = '';
+  let lines = [];
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line); line = word;
+    } else { line = test; }
+  }
+  if (line) lines.push(line);
+  if (lines.length > 2) lines = lines.slice(0, 2);
+  const startY = y - (lines.length - 1) * lineH / 2;
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], x, startY + i * lineH);
+  }
+}
+
+// ===================== CANVAS INTERACTION =====================
+function getNodeAt(sx, sy) {
+  const nodes = getNodes(STATE.currentModelId);
+  // Iterate in reverse (top-most first)
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i];
+    const nx = n.x * STATE.zoom + STATE.panX;
+    const ny = n.y * STATE.zoom + STATE.panY;
+    const nw = (n.w || 140) * STATE.zoom;
+    const nh = (n.h || 60) * STATE.zoom;
+    if (sx >= nx && sx <= nx+nw && sy >= ny && sy <= ny+nh) return n;
+  }
+  return null;
+}
+
+function getLinkAt(sx, sy) {
+  const nodes = getNodes(STATE.currentModelId);
+  const links = getLinks(STATE.currentModelId);
+  for (const link of links) {
+    const src = nodes.find(n => n.id === link.sourceId);
+    const tgt = nodes.find(n => n.id === link.targetId);
+    if (!src || !tgt) continue;
+    const sp = worldToScreen(src.x+(src.w||140)/2, src.y+(src.h||60)/2);
+    const tp = worldToScreen(tgt.x+(tgt.w||140)/2, tgt.y+(tgt.h||60)/2);
+    if (pointNearLine(sx, sy, sp.x, sp.y, tp.x, tp.y, 8)) return link;
+  }
+  return null;
+}
+
+function pointNearLine(px, py, x1, y1, x2, y2, tol) {
+  const dx = x2-x1, dy = y2-y1;
+  const len2 = dx*dx+dy*dy;
+  if (len2 < 1) return false;
+  let t = ((px-x1)*dx+(py-y1)*dy)/len2;
+  t = Math.max(0, Math.min(1, t));
+  const nx = x1+t*dx-px, ny = y1+t*dy-py;
+  return nx*nx+ny*ny < tol*tol;
+}
+
+function onCanvasMouseDown(e) {
+  if (!STATE.currentModelId) return;
+  const r = canvasEl.getBoundingClientRect();
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  closeCtxMenu();
+
+  if (STATE.isConnecting) {
+    const tgt = getNodeAt(sx, sy);
+    if (tgt && tgt.id !== STATE.connectFrom) {
+      addLink(STATE.connectFrom, tgt.id);
+    }
+    STATE.isConnecting = false;
+    STATE.connectFrom = null;
+    canvasEl.style.cursor = 'default';
+    redrawCanvas();
+    return;
+  }
+
+  if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    STATE.isPanning = true;
+    STATE.panStartX = e.clientX - STATE.panX;
+    STATE.panStartY = e.clientY - STATE.panY;
+    canvasEl.style.cursor = 'grabbing';
+    return;
+  }
+
+  const node = getNodeAt(sx, sy);
+  if (node) {
+    STATE.selectedNodeId = node.id;
+    STATE.selectedLinkId = null;
+    STATE.isDragging = true;
+    STATE.dragTarget = node.id;
+    const wp = screenToWorld(sx, sy);
+    STATE.dragOffX = wp.x - node.x;
+    STATE.dragOffY = wp.y - node.y;
+    updatePropsPanel();
+    redrawCanvas();
+    return;
+  }
+  const link = getLinkAt(sx, sy);
+  if (link) {
+    STATE.selectedLinkId = link.id;
+    STATE.selectedNodeId = null;
+    updatePropsPanel();
+    redrawCanvas();
+    return;
+  }
+  STATE.selectedNodeId = null;
+  STATE.selectedLinkId = null;
+  STATE.isPanning = true;
+  STATE.panStartX = e.clientX - STATE.panX;
+  STATE.panStartY = e.clientY - STATE.panY;
+  canvasEl.style.cursor = 'grabbing';
+  updatePropsPanel();
+  redrawCanvas();
+}
+
+function onCanvasMouseMove(e) {
+  const r = canvasEl.getBoundingClientRect();
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  STATE._mouseX = sx; STATE._mouseY = sy;
+
+  if (STATE.isConnecting) { redrawCanvas(); return; }
+
+  if (STATE.isDragging && STATE.dragTarget) {
+    const node = DB.nodes.find(n => n.id === STATE.dragTarget);
+    if (node) {
+      const wp = screenToWorld(sx, sy);
+      let nx = wp.x - STATE.dragOffX;
+      let ny = wp.y - STATE.dragOffY;
+      if (STATE.snapToGrid) {
+        nx = Math.round(nx / STATE.gridSize) * STATE.gridSize;
+        ny = Math.round(ny / STATE.gridSize) * STATE.gridSize;
+      }
+      node.x = Math.max(0, nx);
+      node.y = Math.max(0, ny);
+      redrawCanvas();
+    }
+    return;
+  }
+  if (STATE.isPanning) {
+    STATE.panX = e.clientX - STATE.panStartX;
+    STATE.panY = e.clientY - STATE.panStartY;
+    redrawCanvas();
+    return;
+  }
+  // Cursor hint
+  const node = getNodeAt(sx, sy);
+  canvasEl.style.cursor = node ? 'move' : 'default';
+}
+
+function onCanvasMouseUp(e) {
+  if (STATE.isDragging) { saveDB(); }
+  STATE.isDragging = false;
+  STATE.dragTarget = null;
+  STATE.isPanning = false;
+  canvasEl.style.cursor = 'default';
+}
+
+function onCanvasWheel(e) {
+  e.preventDefault();
+  const r = canvasEl.getBoundingClientRect();
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  const delta = e.deltaY < 0 ? 1.1 : 0.9;
+  const newZoom = Math.max(0.1, Math.min(5, STATE.zoom * delta));
+  STATE.panX = sx - (sx - STATE.panX) * (newZoom / STATE.zoom);
+  STATE.panY = sy - (sy - STATE.panY) * (newZoom / STATE.zoom);
+  STATE.zoom = newZoom;
+  redrawCanvas();
+}
+
+function onCanvasContextMenu(e) {
+  e.preventDefault();
+  const r = canvasEl.getBoundingClientRect();
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  const node = getNodeAt(sx, sy);
+  const link = !node && getLinkAt(sx, sy);
+  showCtxMenu(e.clientX, e.clientY, node, link, sx, sy);
+}
+
+function onCanvasDblClick(e) {
+  const r = canvasEl.getBoundingClientRect();
+  const sx = e.clientX - r.left, sy = e.clientY - r.top;
+  const node = getNodeAt(sx, sy);
+  if (node) { showEditNodeModal(node.id); return; }
+  // Double-click on empty space: add node
+  const wp = screenToWorld(sx, sy);
+  showAddNodeModal(wp.x, wp.y);
+}
+
+// ===================== ZOOM & GRID =====================
+function zoomIn() { STATE.zoom = Math.min(5, STATE.zoom * 1.2); redrawCanvas(); }
+function zoomOut() { STATE.zoom = Math.max(0.1, STATE.zoom * 0.8); redrawCanvas(); }
+function zoomFit() {
+  if (!STATE.currentModelId) return;
+  const nodes = getNodes(STATE.currentModelId);
+  if (!nodes.length) return;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for (const n of nodes) {
+    minX=Math.min(minX,n.x); minY=Math.min(minY,n.y);
+    maxX=Math.max(maxX,n.x+(n.w||140)); maxY=Math.max(maxY,n.y+(n.h||60));
+  }
+  const W=canvasEl.width, H=canvasEl.height;
+  const pad=40;
+  const scaleX=(W-pad*2)/(maxX-minX||1);
+  const scaleY=(H-pad*2)/(maxY-minY||1);
+  STATE.zoom=Math.min(scaleX,scaleY,2);
+  STATE.panX=pad-minX*STATE.zoom;
+  STATE.panY=pad-minY*STATE.zoom;
+  redrawCanvas();
+}
+
+function toggleGrid() {
+  STATE.showGrid = !STATE.showGrid;
+  document.getElementById('btn-grid').classList.toggle('active', STATE.showGrid);
+  redrawCanvas();
+}
+function toggleSnap() {
+  STATE.snapToGrid = !STATE.snapToGrid;
+  document.getElementById('btn-snap').classList.toggle('active', STATE.snapToGrid);
+}
+
+// ===================== CONTEXT MENU =====================
+function showCtxMenu(x, y, node, link, canvasSX, canvasSY) {
+  const menu = document.getElementById('ctx-menu');
+  menu.innerHTML = '';
+  if (node) {
+    menu.innerHTML = `
+      <div class="ctx-item" onclick="showEditNodeModal('${node.id}');closeCtxMenu()">✏️ Редактировать</div>
+      <div class="ctx-item" onclick="startConnect('${node.id}');closeCtxMenu()">⟶ Добавить связь</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="deleteNode('${node.id}');closeCtxMenu()">🗑 Удалить узел</div>`;
+  } else if (link) {
+    menu.innerHTML = `
+      <div class="ctx-item" onclick="showEditLinkModal('${link.id}');closeCtxMenu()">✏️ Редактировать связь</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="deleteLink('${link.id}');closeCtxMenu()">🗑 Удалить связь</div>`;
+  } else {
+    const wp = screenToWorld(canvasSX, canvasSY);
+    menu.innerHTML = `
+      <div class="ctx-item" onclick="showAddNodeModal(${wp.x.toFixed(0)},${wp.y.toFixed(0)});closeCtxMenu()">＋ Добавить узел здесь</div>
+      <div class="ctx-item" onclick="zoomFit();closeCtxMenu()">⊡ По размеру</div>`;
+  }
+  menu.style.left = Math.min(x, window.innerWidth-180) + 'px';
+  menu.style.top = Math.min(y, window.innerHeight-150) + 'px';
+  menu.classList.add('open');
+}
+function closeCtxMenu() { document.getElementById('ctx-menu').classList.remove('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('#ctx-menu')) closeCtxMenu(); });
+
+// ===================== TOOLBAR ACTIONS =====================
+function addNodeFromToolbar() { showAddNodeModal(screenToWorld(canvasEl.width/2,canvasEl.height/2).x, screenToWorld(canvasEl.width/2,canvasEl.height/2).y); }
+function addLinkFromToolbar() {
+  if (!STATE.selectedNodeId) { notify('Выберите исходный узел на диаграмме', 'info'); return; }
+  startConnect(STATE.selectedNodeId);
+}
+function startConnect(nodeId) {
+  STATE.isConnecting = true;
+  STATE.connectFrom = nodeId;
+  canvasEl.style.cursor = 'crosshair';
+  notify('Щёлкните на целевой узел для добавления связи', 'info');
+}
+
+// ===================== NODE OPERATIONS =====================
+function showAddNodeModal(wx=100, wy=100) {
+  const typeOptions = DB.nodeTypes.map(t =>
+    `<option value="${t.id}">${t.icon} ${t.name} (${t.layer})</option>`).join('');
+  showModal('Добавить узел', `
+    <div class="prop-group"><label class="prop-label">Имя узла</label>
+      <input class="prop-input" id="mi-name" placeholder="Введите имя..." autofocus></div>
+    <div class="prop-group"><label class="prop-label">Тип</label>
+      <select class="prop-input" id="mi-type">${typeOptions}</select></div>
+    <div class="prop-row">
+      <div class="prop-group"><label class="prop-label">X</label><input class="prop-input" id="mi-x" type="number" value="${Math.round(wx)}"></div>
+      <div class="prop-group"><label class="prop-label">Y</label><input class="prop-input" id="mi-y" type="number" value="${Math.round(wy)}"></div>
+    </div>
+  `, () => {
+    const name = document.getElementById('mi-name').value.trim();
+    if (!name) { notify('Введите имя узла', 'error'); return false; }
+    const node = {
+      id: uid(), name,
+      modelId: STATE.currentModelId,
+      nodeTypeId: document.getElementById('mi-type').value,
+      parentNodeId: null,
+      x: parseInt(document.getElementById('mi-x').value) || 100,
+      y: parseInt(document.getElementById('mi-y').value) || 100,
+      w: 140, h: 60,
+    };
+    DB.nodes.push(node);
+    saveDB();
+    log('success', `Узел добавлен: ${name}`);
+    renderModelTree();
+    redrawCanvas();
+    return true;
+  });
+  setTimeout(() => document.getElementById('mi-name')?.focus(), 50);
+}
+
+function showEditNodeModal(nodeId) {
+  const node = DB.nodes.find(n => n.id === nodeId);
+  if (!node) return;
+  const typeOptions = DB.nodeTypes.map(t =>
+    `<option value="${t.id}" ${t.id === node.nodeTypeId ? 'selected' : ''}>${t.icon} ${t.name}</option>`).join('');
+  showModal('Редактировать узел', `
+    <div class="prop-group"><label class="prop-label">Имя</label>
+      <input class="prop-input" id="mi-name" value="${escHtml(node.name)}" autofocus></div>
+    <div class="prop-group"><label class="prop-label">Тип</label>
+      <select class="prop-input" id="mi-type">${typeOptions}</select></div>
+    <div class="prop-row">
+      <div class="prop-group"><label class="prop-label">Ширина</label><input class="prop-input" id="mi-w" type="number" value="${node.w||140}"></div>
+      <div class="prop-group"><label class="prop-label">Высота</label><input class="prop-input" id="mi-h" type="number" value="${node.h||60}"></div>
+    </div>
+  `, () => {
+    const name = document.getElementById('mi-name').value.trim();
+    if (!name) { notify('Введите имя', 'error'); return false; }
+    node.name = name;
+    node.nodeTypeId = document.getElementById('mi-type').value;
+    node.w = parseInt(document.getElementById('mi-w').value) || 140;
+    node.h = parseInt(document.getElementById('mi-h').value) || 60;
+    saveDB();
+    log('success', `Узел обновлён: ${name}`);
+    renderModelTree();
+    redrawCanvas();
+    updatePropsPanel();
+    return true;
+  });
+}
+
+function deleteNode(nodeId) {
+  if (!confirm('Удалить узел и все связанные с ним связи?')) return;
+  const node = DB.nodes.find(n => n.id === nodeId);
+  DB.nodes = DB.nodes.filter(n => n.id !== nodeId);
+  DB.links = DB.links.filter(l => l.sourceId !== nodeId && l.targetId !== nodeId);
+  if (STATE.selectedNodeId === nodeId) STATE.selectedNodeId = null;
+  saveDB();
+  log('warn', `Узел удалён: ${node?.name}`);
+  renderModelTree();
+  redrawCanvas();
+  updatePropsPanel();
+}
+
+// ===================== LINK OPERATIONS =====================
+function addLink(srcId, tgtId) {
+  const typeOptions = DB.linkTypes.map(t =>
+    `<option value="${t.id}">${t.name}</option>`).join('');
+  showModal('Добавить связь', `
+    <div class="prop-group"><label class="prop-label">Тип связи</label>
+      <select class="prop-input" id="ml-type">${typeOptions}</select></div>
+    <div class="prop-group"><label class="prop-label">Метка (необязательно)</label>
+      <input class="prop-input" id="ml-label" placeholder="Например: HTTP, REST..."></div>
+  `, () => {
+    const link = {
+      id: uid(), modelId: STATE.currentModelId,
+      sourceId: srcId, targetId: tgtId,
+      linkTypeId: document.getElementById('ml-type').value,
+      label: document.getElementById('ml-label').value.trim(),
+    };
+    DB.links.push(link);
+    saveDB();
+    log('success', `Связь добавлена: ${srcId} → ${tgtId}`);
+    redrawCanvas();
+    return true;
+  });
+}
+
+function showEditLinkModal(linkId) {
+  const link = DB.links.find(l => l.id === linkId);
+  if (!link) return;
+  const typeOptions = DB.linkTypes.map(t =>
+    `<option value="${t.id}" ${t.id === link.linkTypeId ? 'selected' : ''}>${t.name}</option>`).join('');
+  showModal('Редактировать связь', `
+    <div class="prop-group"><label class="prop-label">Тип связи</label>
+      <select class="prop-input" id="ml-type">${typeOptions}</select></div>
+    <div class="prop-group"><label class="prop-label">Метка</label>
+      <input class="prop-input" id="ml-label" value="${escHtml(link.label||'')}"></div>
+  `, () => {
+    link.linkTypeId = document.getElementById('ml-type').value;
+    link.label = document.getElementById('ml-label').value.trim();
+    saveDB();
+    log('success', 'Связь обновлена');
+    redrawCanvas();
+    updatePropsPanel();
+    return true;
+  });
+}
+
+function deleteLink(linkId) {
+  if (!confirm('Удалить связь?')) return;
+  DB.links = DB.links.filter(l => l.id !== linkId);
+  if (STATE.selectedLinkId === linkId) STATE.selectedLinkId = null;
+  saveDB();
+  log('warn', `Связь удалена: ${linkId}`);
+  redrawCanvas();
+  updatePropsPanel();
+}
+
+// ===================== MODEL TREE =====================
+function renderModelTree() {
+  if (!STATE.currentModelId) return;
+  const tree = document.getElementById('model-tree');
+  const nodes = getNodes(STATE.currentModelId);
+  const model = getModel(STATE.currentModelId);
+  document.getElementById('sidebar-title').textContent = model?.name || 'Структура модели';
+  // Group by layer
+  const layers = {};
+  for (const n of nodes) {
+    const nt = getNodeType(n.nodeTypeId);
+    const layer = nt?.layer || 'Прочее';
+    if (!layers[layer]) layers[layer] = [];
+    layers[layer].push(n);
+  }
+  tree.innerHTML = Object.entries(layers).map(([layer, ns]) => `
+    <div class="tree-item" onclick="toggleLayer(this)">
+      <span class="tree-toggle">▼</span>
+      <span class="tree-icon">📁</span>
+      <span class="tree-label">${escHtml(layer)}</span>
+      <span class="tree-count">${ns.length}</span>
+    </div>
+    <div class="tree-children">
+      ${ns.map(n => {
+        const nt = getNodeType(n.nodeTypeId);
+        return `<div class="tree-item ${n.id===STATE.selectedNodeId?'selected':''}" onclick="selectNode('${n.id}')">
+          <span class="tree-toggle"></span>
+          <span class="tree-icon">${nt?.icon||'◼'}</span>
+          <span class="tree-label">${escHtml(n.name)}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+}
+
+function toggleLayer(el) {
+  const children = el.nextElementSibling;
+  const toggle = el.querySelector('.tree-toggle');
+  const hidden = children.style.display === 'none';
+  children.style.display = hidden ? '' : 'none';
+  toggle.textContent = hidden ? '▼' : '▶';
+}
+
+function filterTree(q) {
+  const items = document.querySelectorAll('#model-tree .tree-item:not(:has(.tree-toggle:empty))');
+  items.forEach(item => {
+    const label = item.querySelector('.tree-label')?.textContent || '';
+    item.style.display = !q || label.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function selectNode(nodeId) {
+  STATE.selectedNodeId = nodeId;
+  STATE.selectedLinkId = null;
+  renderModelTree();
+  updatePropsPanel();
+  // Scroll to node on canvas
+  const node = DB.nodes.find(n => n.id === nodeId);
+  if (node) {
+    STATE.panX = canvasEl.width/2 - (node.x + (node.w||140)/2) * STATE.zoom;
+    STATE.panY = canvasEl.height/2 - (node.y + (node.h||60)/2) * STATE.zoom;
+    redrawCanvas();
+  }
+}
+
+// ===================== PALETTE =====================
+function renderPalette() {
+  const grid = document.getElementById('palette-grid');
+  grid.innerHTML = DB.nodeTypes.map(t => {
+    const c = NODE_COLORS[t.id] || DEFAULT_NODE_COLOR;
+    return `<div class="palette-item" draggable="true"
+      ondragstart="onPaletteDragStart(event,'${t.id}')"
+      onclick="addNodeOfType('${t.id}')">
+      <div class="palette-shape" style="border-color:${c.stroke};background:${c.fill};color:${c.text}">${t.icon}</div>
+      <div class="palette-name">${t.name}</div>
+    </div>`;
+  }).join('');
+  // Drop on canvas
+  canvasEl.addEventListener('dragover', e => e.preventDefault());
+  canvasEl.addEventListener('drop', onCanvasDrop);
+}
+
+let _dragTypeId = null;
+function onPaletteDragStart(e, typeId) {
+  _dragTypeId = typeId;
+  e.dataTransfer.effectAllowed = 'copy';
+}
+function onCanvasDrop(e) {
+  e.preventDefault();
+  if (!_dragTypeId || !STATE.currentModelId) return;
+  const r = canvasEl.getBoundingClientRect();
+  const wp = screenToWorld(e.clientX - r.left, e.clientY - r.top);
+  const nt = getNodeType(_dragTypeId);
+  const node = {
+    id: uid(), name: nt?.name || 'Новый узел',
+    modelId: STATE.currentModelId,
+    nodeTypeId: _dragTypeId,
+    parentNodeId: null,
+    x: STATE.snapToGrid ? Math.round(wp.x/STATE.gridSize)*STATE.gridSize : Math.round(wp.x),
+    y: STATE.snapToGrid ? Math.round(wp.y/STATE.gridSize)*STATE.gridSize : Math.round(wp.y),
+    w: 140, h: 60,
+  };
+  DB.nodes.push(node);
+  saveDB();
+  log('success', `Узел добавлен перетаскиванием: ${node.name}`);
+  renderModelTree();
+  redrawCanvas();
+  _dragTypeId = null;
+}
+
+function addNodeOfType(typeId) {
+  const nt = getNodeType(typeId);
+  const wp = screenToWorld(canvasEl.width/2, canvasEl.height/2);
+  showAddNodeModal(wp.x, wp.y);
+  setTimeout(() => {
+    const sel = document.getElementById('mi-type');
+    if (sel) sel.value = typeId;
+  }, 60);
+}
+
+// ===================== PROPS PANEL =====================
+function showPanelTab(tab) {
+  STATE.activePanel = tab;
+  ['props','style','trace'].forEach(t => {
+    document.getElementById('panel-'+t).style.display = t===tab ? '' : 'none';
+    document.getElementById('ptab-'+t)?.classList.toggle('active', t===tab);
+  });
+}
+
+function updatePropsPanel() {
+  const el = document.getElementById('panel-props');
+  const selEl = document.getElementById('panel-style');
+  if (STATE.selectedNodeId) {
+    const node = DB.nodes.find(n => n.id === STATE.selectedNodeId);
+    if (!node) { el.innerHTML = '<div style="color:var(--text3);font-size:12px;">Узел не найден</div>'; return; }
+    const nt = getNodeType(node.nodeTypeId);
+    const c = NODE_COLORS[node.nodeTypeId] || DEFAULT_NODE_COLOR;
+    el.innerHTML = `
+      <div class="prop-group"><div class="prop-label">Имя</div>
+        <input class="prop-input" value="${escHtml(node.name)}" onchange="updateNodeName('${node.id}',this.value)"></div>
+      <div class="prop-group"><div class="prop-label">Тип</div>
+        <div class="prop-value"><span class="badge badge-blue">${nt?.icon||''} ${nt?.name||'—'}</span></div></div>
+      <div class="prop-group"><div class="prop-label">Слой</div>
+        <div class="prop-value">${nt?.layer||'—'}</div></div>
+      <div class="prop-group"><div class="prop-label">Позиция</div>
+        <div class="prop-row">
+          <input class="prop-input" type="number" value="${node.x}" onchange="updateNodePos('${node.id}','x',this.value)" placeholder="X">
+          <input class="prop-input" type="number" value="${node.y}" onchange="updateNodePos('${node.id}','y',this.value)" placeholder="Y">
+        </div></div>
+      <div class="prop-group"><div class="prop-label">Размер</div>
+        <div class="prop-row">
+          <input class="prop-input" type="number" value="${node.w||140}" onchange="updateNodeSize('${node.id}','w',this.value)" placeholder="W">
+          <input class="prop-input" type="number" value="${node.h||60}" onchange="updateNodeSize('${node.id}','h',this.value)" placeholder="H">
+        </div></div>
+      <div class="prop-group"><div class="prop-label">ID</div>
+        <div class="prop-value" style="font-family:var(--mono);font-size:10px;color:var(--text3)">${node.id}</div></div>
+      <div style="margin-top:10px;display:flex;gap:6px;">
+        <button class="btn btn-primary" onclick="showEditNodeModal('${node.id}')">Редактировать</button>
+        <button class="btn btn-ghost btn-danger" onclick="deleteNode('${node.id}')">Удалить</button>
+      </div>`;
+    selEl.innerHTML = `
+      <div class="prop-group"><div class="prop-label">Цвет заливки</div>
+        <input class="prop-input" type="color" value="${c.fill}" onchange="updateNodeColor('${node.id}','fill',this.value)"></div>
+      <div class="prop-group"><div class="prop-label">Цвет обводки</div>
+        <input class="prop-input" type="color" value="${c.stroke}" onchange="updateNodeColor('${node.id}','stroke',this.value)"></div>`;
+  } else if (STATE.selectedLinkId) {
+    const link = DB.links.find(l => l.id === STATE.selectedLinkId);
+    if (!link) return;
+    const lt = getLinkType(link.linkTypeId);
+    const srcNode = DB.nodes.find(n => n.id === link.sourceId);
+    const tgtNode = DB.nodes.find(n => n.id === link.targetId);
+    el.innerHTML = `
+      <div class="prop-group"><div class="prop-label">Тип связи</div>
+        <div class="prop-value"><span class="badge badge-gray">${lt?.name||'—'}</span></div></div>
+      <div class="prop-group"><div class="prop-label">Источник</div>
+        <div class="prop-value">${escHtml(srcNode?.name||link.sourceId)}</div></div>
+      <div class="prop-group"><div class="prop-label">Цель</div>
+        <div class="prop-value">${escHtml(tgtNode?.name||link.targetId)}</div></div>
+      <div class="prop-group"><div class="prop-label">Метка</div>
+        <input class="prop-input" value="${escHtml(link.label||'')}" onchange="updateLinkLabel('${link.id}',this.value)"></div>
+      <div style="margin-top:10px;display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-danger" onclick="deleteLink('${link.id}')">Удалить</button>
+      </div>`;
+  } else {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px 0;">Выберите элемент на диаграмме</div>';
+    selEl.innerHTML = '';
+  }
+}
+
+function updateNodeName(id, val) {
+  const n = DB.nodes.find(n => n.id === id);
+  if (n) { n.name = val; saveDB(); renderModelTree(); redrawCanvas(); }
+}
+function updateNodePos(id, axis, val) {
+  const n = DB.nodes.find(n => n.id === id);
+  if (n) { n[axis] = parseInt(val)||0; saveDB(); redrawCanvas(); }
+}
+function updateNodeSize(id, dim, val) {
+  const n = DB.nodes.find(n => n.id === id);
+  if (n) { n[dim] = parseInt(val)||60; saveDB(); redrawCanvas(); }
+}
+function updateNodeColor(id, prop, val) {
+  if (!NODE_COLORS[id]) NODE_COLORS[id] = { ...DEFAULT_NODE_COLOR };
+  NODE_COLORS[id][prop] = val;
+  redrawCanvas();
+}
+function updateLinkLabel(id, val) {
+  const l = DB.links.find(l => l.id === id);
+  if (l) { l.label = val; saveDB(); redrawCanvas(); }
+}
+
+// ===================== MODALS =====================
+function showModal(title, body, onOk) {
+  const overlay = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+  content.innerHTML = `
+    <h3>${escHtml(title)}</h3>
+    ${body}
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" id="modal-ok">Сохранить</button>
+    </div>`;
+  overlay.classList.add('open');
+  document.getElementById('modal-ok').onclick = () => { if (onOk()) closeModal(); };
+  // Enter key
+  content.onkeydown = e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') document.getElementById('modal-ok').click(); };
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+function showCreateModelModal() {
+  const notationOptions = DB.notations.map(n =>
+    `<option value="${n.id}">${n.icon} ${n.name}</option>`).join('');
+  showModal('Создать модель', `
+    <div class="prop-group"><label class="prop-label">Название модели</label>
+      <input class="prop-input" id="cm-name" placeholder="Введите название..." autofocus></div>
+    <div class="prop-group"><label class="prop-label">Описание</label>
+      <input class="prop-input" id="cm-desc" placeholder="Краткое описание..."></div>
+    <div class="prop-group"><label class="prop-label">Нотация</label>
+      <select class="prop-input" id="cm-notation">${notationOptions}</select></div>
+  `, () => {
+    const name = document.getElementById('cm-name').value.trim();
+    if (!name) { notify('Введите название модели', 'error'); return false; }
+    const model = {
+      id: uid(), name,
+      description: document.getElementById('cm-desc').value.trim(),
+      notationId: document.getElementById('cm-notation').value,
+      version: '1.0.0', ownerId: 'user1',
+      createdAt: new Date().toISOString().slice(0,10),
+      updatedAt: new Date().toISOString().slice(0,10),
+    };
+    DB.models.push(model);
+    // Create default diagram
+    DB.diagrams.push({
+      id: uid(), modelId: model.id, name: 'Основная диаграмма',
+      notationId: model.notationId,
+    });
+    saveDB();
+    log('success', `Модель создана: ${name}`);
+    notify(`Модель "${name}" создана`, 'success');
+    openModel(model.id);
+    return true;
+  });
+  setTimeout(() => document.getElementById('cm-name')?.focus(), 50);
+}
+
+function showAddDiagramModal() {
+  if (!STATE.currentModelId) return;
+  showModal('Новая диаграмма', `
+    <div class="prop-group"><label class="prop-label">Название диаграммы</label>
+      <input class="prop-input" id="ad-name" placeholder="Введите название..." autofocus></div>
+  `, () => {
+    const name = document.getElementById('ad-name').value.trim();
+    if (!name) { notify('Введите название', 'error'); return false; }
+    const diag = {
+      id: uid(), modelId: STATE.currentModelId, name,
+      notationId: getModel(STATE.currentModelId)?.notationId || 'n-archimate',
+    };
+    DB.diagrams.push(diag);
+    saveDB();
+    STATE.currentDiagramId = diag.id;
+    log('success', `Диаграмма создана: ${name}`);
+    renderDiagramTabs();
+    return true;
+  });
+}
+
+function showAddTypeModal() {
+  showModal('Добавить тип узла', `
+    <div class="prop-group"><label class="prop-label">Название</label>
+      <input class="prop-input" id="at-name" autofocus placeholder="Например: Микросервис"></div>
+    <div class="prop-group"><label class="prop-label">Слой</label>
+      <input class="prop-input" id="at-layer" placeholder="Например: Приложение"></div>
+    <div class="prop-group"><label class="prop-label">Иконка (эмодзи)</label>
+      <input class="prop-input" id="at-icon" placeholder="🔷" maxlength="4"></div>
+    <div class="prop-group"><label class="prop-label">Цвет</label>
+      <input class="prop-input" type="color" id="at-color" value="#1565c0"></div>
+  `, () => {
+    const name = document.getElementById('at-name').value.trim();
+    if (!name) { notify('Введите название', 'error'); return false; }
+    const nt = {
+      id: uid(), name,
+      layer: document.getElementById('at-layer').value.trim() || 'Прочее',
+      icon: document.getElementById('at-icon').value.trim() || '◼',
+      color: document.getElementById('at-color').value,
+      textColor: '#ffffff', shape: 'rect',
+    };
+    DB.nodeTypes.push(nt);
+    saveDB();
+    log('success', `Тип добавлен: ${name}`);
+    notify('Тип узла добавлен', 'success');
+    renderTypesCatalog('');
+    return true;
+  });
+}
+
+// ===================== RELATION MATRIX =====================
+function buildMatrixSelectors() {
+  const sel = document.getElementById('matrix-model-sel');
+  sel.innerHTML = '<option value="">— Выберите модель —</option>' +
+    DB.models.map(m => `<option value="${m.id}" ${m.id===STATE.currentModelId?'selected':''}>${escHtml(m.name)}</option>`).join('');
+  if (STATE.currentModelId) buildMatrix();
+}
+
+function buildMatrix() {
+  const modelId = document.getElementById('matrix-model-sel').value;
+  if (!modelId) { document.getElementById('matrix-wrap').innerHTML = '<div style="color:var(--text3);padding:20px;">Выберите модель</div>'; return; }
+  STATE.currentModelId = modelId;
+  const mode = document.getElementById('matrix-mode').value;
+  const heatmap = document.getElementById('matrix-heatmap').checked;
+  const hideEmpty = document.getElementById('matrix-hide-empty').checked;
+  const nodes = getNodes(modelId);
+  const links = getLinks(modelId);
+
+  // Build row/col entities based on mode
+  let rowCols;
+  if (mode === 'types') {
+    // Group nodes by nodeType
+    const usedTypeIds = [...new Set(nodes.map(n => n.nodeTypeId))];
+    rowCols = usedTypeIds.map(id => {
+      const nt = getNodeType(id);
+      return { id, name: nt?.name || id, icon: nt?.icon || '◼', color: (NODE_COLORS[id]||DEFAULT_NODE_COLOR).fill };
+    });
+  } else {
+    // Group nodes by layer
+    const layers = [...new Set(nodes.map(n => getNodeType(n.nodeTypeId)?.layer || 'Прочее'))];
+    rowCols = layers.map(l => ({ id: l, name: l, icon: '📁', color: '#1e3a5f' }));
+  }
+
+  // Build cell map: rowId × colId → count per linkType
+  const cells = {};
+  for (const link of links) {
+    const srcNode = nodes.find(n => n.id === link.sourceId);
+    const tgtNode = nodes.find(n => n.id === link.targetId);
+    if (!srcNode || !tgtNode) continue;
+    let rowId, colId;
+    if (mode === 'types') {
+      rowId = srcNode.nodeTypeId;
+      colId = tgtNode.nodeTypeId;
+    } else {
+      rowId = getNodeType(srcNode.nodeTypeId)?.layer || 'Прочее';
+      colId = getNodeType(tgtNode.nodeTypeId)?.layer || 'Прочее';
+    }
+    const key = `${rowId}|||${colId}`;
+    if (!cells[key]) cells[key] = { rowId, colId, total: 0, byType: {} };
+    cells[key].total++;
+    cells[key].byType[link.linkTypeId] = (cells[key].byType[link.linkTypeId]||0)+1;
+  }
+
+  // Filter empty axes
+  let rows = [...rowCols], cols = [...rowCols];
+  if (hideEmpty) {
+    const usedRows = new Set(Object.values(cells).map(c=>c.rowId));
+    const usedCols = new Set(Object.values(cells).map(c=>c.colId));
+    rows = rows.filter(r => usedRows.has(r.id));
+    cols = cols.filter(c => usedCols.has(c.id));
+  }
+
+  if (!rows.length) { document.getElementById('matrix-wrap').innerHTML = '<div style="color:var(--text3);padding:20px;">Нет данных для отображения</div>'; return; }
+
+  // Max value for heatmap
+  const maxVal = Math.max(1, ...Object.values(cells).map(c=>c.total));
+
+  // Build table
+  let html = '<table class="matrix-table" id="matrix-table"><thead><tr>';
+  html += '<th class="matrix-corner">Источник \\ Цель</th>';
+  for (const col of cols) {
+    html += `<th class="col-header" title="${escHtml(col.name)}" style="color:${col.color||'var(--accent)'}">${escHtml(col.icon)} ${escHtml(col.name)}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+  for (const row of rows) {
+    html += `<tr><th class="row-header">${escHtml(row.icon)} ${escHtml(row.name)}</th>`;
+    for (const col of cols) {
+      const key = `${row.id}|||${col.id}`;
+      const cell = cells[key];
+      const val = cell ? cell.total : 0;
+      let cls = val > 0 ? 'has-val' : '';
+      if (heatmap && val > 0) {
+        const ratio = val / maxVal;
+        if (ratio > 0.66) cls += ' very-high';
+        else if (ratio > 0.33) cls += ' high';
+      }
+      const byTypeStr = cell ? Object.entries(cell.byType).map(([tid,cnt]) => {
+        const lt = getLinkType(tid); return `${lt?.name||tid}: ${cnt}`;
+      }).join(', ') : '';
+      html += `<td title="${byTypeStr}" onclick="showMatrixCellDetail('${row.id}','${col.id}','${escHtml(row.name)}','${escHtml(col.name)}')">`
+            + `<span class="matrix-cell-val ${cls}">${val||''}</span></td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('matrix-wrap').innerHTML = html;
+  log('info', `Матрица построена: ${rows.length}×${cols.length}`);
+}
+
+function showMatrixCellDetail(rowId, colId, rowName, colName) {
+  const modelId = document.getElementById('matrix-model-sel').value;
+  const mode = document.getElementById('matrix-mode').value;
+  const nodes = getNodes(modelId);
+  const links = getLinks(modelId);
+  const matchingLinks = links.filter(link => {
+    const srcNode = nodes.find(n => n.id === link.sourceId);
+    const tgtNode = nodes.find(n => n.id === link.targetId);
+    if (!srcNode || !tgtNode) return false;
+    let r, c;
+    if (mode === 'types') { r = srcNode.nodeTypeId; c = tgtNode.nodeTypeId; }
+    else { r = getNodeType(srcNode.nodeTypeId)?.layer||'Прочее'; c = getNodeType(tgtNode.nodeTypeId)?.layer||'Прочее'; }
+    return r === rowId && c === colId;
+  });
+  if (!matchingLinks.length) { notify('Нет связей в данной ячейке', 'info'); return; }
+  const detail = matchingLinks.map(l => {
+    const s = nodes.find(n=>n.id===l.sourceId), t = nodes.find(n=>n.id===l.targetId);
+    const lt = getLinkType(l.linkTypeId);
+    return `<tr><td>${escHtml(s?.name||l.sourceId)}</td><td>${escHtml(lt?.name||l.linkTypeId)}</td><td>${escHtml(t?.name||l.targetId)}</td><td>${escHtml(l.label||'')}</td></tr>`;
+  }).join('');
+  showModal(`Ячейка: ${rowName} → ${colName} (${matchingLinks.length} связей)`,
+    `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+       <thead><tr style="color:var(--text3)"><th style="padding:4px;text-align:left">Источник</th><th style="padding:4px;text-align:left">Тип</th><th style="padding:4px;text-align:left">Цель</th><th style="padding:4px;text-align:left">Метка</th></tr></thead>
+       <tbody>${detail}</tbody>
+     </table>`, () => true);
+}
+
+function exportMatrixCSV() {
+  const table = document.getElementById('matrix-table');
+  if (!table) { notify('Сначала постройте матрицу', 'info'); return; }
+  const rows = table.querySelectorAll('tr');
+  const csv = Array.from(rows).map(r =>
+    Array.from(r.querySelectorAll('th,td')).map(c => `"${c.textContent.trim().replace(/"/g,'""')}"`).join(',')
+  ).join('\n');
+  downloadFile('matrix.csv', csv, 'text/csv');
+  log('info', 'Матрица экспортирована в CSV');
+}
+
+function exportMatrixPNG() {
+  const table = document.getElementById('matrix-table');
+  if (!table) { notify('Сначала постройте матрицу', 'info'); return; }
+  const wrap = document.getElementById('matrix-wrap');
+  const width = wrap.scrollWidth, height = wrap.scrollHeight;
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = width; tmpCanvas.height = height;
+  const tctx = tmpCanvas.getContext('2d');
+  tctx.fillStyle = '#12192a'; tctx.fillRect(0,0,width,height);
+  tctx.fillStyle = '#e0e8f0'; tctx.font = '12px Segoe UI';
+  tctx.fillText('Экспорт матрицы в PNG недоступен в браузерной версии (ограничение CORS)', 20, 40);
+  tctx.fillText('Используйте скриншот браузера или экспорт CSV.', 20, 64);
+  notify('PNG: используйте скриншот браузера или экспорт CSV', 'info');
+  log('warn', 'PNG-экспорт матрицы ограничен в браузере');
+}
+
+// ===================== EXPORT / IMPORT =====================
+function exportModel() {
+  const data = {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    exportedBy: 'user1',
+    ...DB
+  };
+  downloadFile('warchi-export.json', JSON.stringify(data, null, 2), 'application/json');
+  log('success', 'Данные экспортированы в JSON');
+  notify('Экспорт выполнен', 'success');
+}
+function importModel() { document.getElementById('import-file').click(); }
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.models) {
+        if (!confirm('Импорт заменит текущие данные. Продолжить?')) return;
+        DB = data;
+        delete DB.version; delete DB.exportedAt; delete DB.exportedBy;
+        const def = defaultData();
+        for (const k of Object.keys(def)) { if (!(k in DB)) DB[k] = def[k]; }
+        saveDB();
+        renderHome();
+        log('success', 'Данные импортированы из JSON');
+        notify('Импорт выполнен', 'success');
+      } else { notify('Неверный формат файла', 'error'); }
+    } catch(err) { notify('Ошибка разбора JSON: ' + err.message, 'error'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function downloadFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportDiagramSVG() {
+  if (!STATE.currentModelId) { notify('Откройте модель', 'info'); return; }
+  const nodes = getNodes(STATE.currentModelId);
+  const links = getLinks(STATE.currentModelId);
+  let minX=0,minY=0,maxX=800,maxY=600;
+  if (nodes.length) {
+    minX=Math.min(...nodes.map(n=>n.x)); minY=Math.min(...nodes.map(n=>n.y));
+    maxX=Math.max(...nodes.map(n=>n.x+(n.w||140))); maxY=Math.max(...nodes.map(n=>n.y+(n.h||60)));
+  }
+  const pad=20, vw=maxX-minX+pad*2, vh=maxY-minY+pad*2;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX-pad} ${minY-pad} ${vw} ${vh}" width="${vw}" height="${vh}" style="background:#12192a">`;
+  for (const link of links) {
+    const s=nodes.find(n=>n.id===link.sourceId), t=nodes.find(n=>n.id===link.targetId);
+    if (!s||!t) continue;
+    const lt=getLinkType(link.linkTypeId);
+    const x1=s.x+(s.w||140)/2,y1=s.y+(s.h||60)/2,x2=t.x+(t.w||140)/2,y2=t.y+(t.h||60)/2;
+    const dash=lt?.style==='dashed'?'stroke-dasharray="6 4"':'';
+    svg+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${lt?.color||'#5ba3e8'}" stroke-width="1.5" ${dash} marker-end="url(#arr)"/>`;
+    if (link.label) svg+=`<text x="${(x1+x2)/2}" y="${(y1+y2)/2-6}" fill="#a0c4e0" font-size="10" text-anchor="middle">${escHtml(link.label)}</text>`;
+  }
+  svg+='<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#5ba3e8"/></marker></defs>';
+  for (const node of nodes) {
+    const c=NODE_COLORS[node.nodeTypeId]||DEFAULT_NODE_COLOR;
+    const nt=getNodeType(node.nodeTypeId);
+    const nx=node.x,ny=node.y,nw=node.w||140,nh=node.h||60;
+    svg+=`<rect x="${nx}" y="${ny}" width="${nw}" height="${nh}" rx="6" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1"/>`;
+    svg+=`<text x="${nx+nw/2}" y="${ny+nh*0.62}" fill="${c.text}" font-size="11" text-anchor="middle" font-family="Segoe UI,sans-serif">${escHtml(node.name)}</text>`;
+    if (nt) svg+=`<text x="${nx+8}" y="${ny+14}" font-size="12">${nt.icon}</text>`;
+  }
+  svg+='</svg>';
+  downloadFile('diagram.svg', svg, 'image/svg+xml');
+  log('success', 'Диаграмма экспортирована в SVG');
+  notify('SVG экспортирован', 'success');
+}
+
+function exportDiagramPNG() {
+  const tmpCanvas = document.createElement('canvas');
+  const scale = 2;
+  tmpCanvas.width = canvasEl.width * scale;
+  tmpCanvas.height = canvasEl.height * scale;
+  const tctx = tmpCanvas.getContext('2d');
+  tctx.scale(scale, scale);
+  tctx.drawImage(canvasEl, 0, 0);
+  tmpCanvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'diagram.png'; a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  log('success', 'Диаграмма экспортирована в PNG');
+  notify('PNG экспортирован', 'success');
+}
+
+// ===================== DOCS =====================
+const DOCS = {
+  'overview': {
+    title: 'Обзор системы',
+    content: `
+<h1>wArchi — Репозиторий архитектуры предприятия</h1>
+<p>wArchi — это браузерное приложение для управления архитектурными моделями предприятия. Работает полностью в браузере без серверной части. Данные хранятся в localStorage.</p>
+<div class="callout">Текущая версия: <strong>1.0.0</strong> (браузерная, без СУБД) · Пользователь: <strong>user1</strong></div>
+<h2>Основные возможности</h2>
+<ul>
+  <li>Создание и редактирование архитектурных моделей</li>
+  <li>Визуальный редактор диаграмм на Canvas</li>
+  <li>Матрица связей компонентов (2D-таблица зависимостей)</li>
+  <li>Поддержка нотаций: ArchiMate 3.2, C4 Model, BPMN 2.0, UML</li>
+  <li>Экспорт в JSON, SVG, PNG</li>
+  <li>Импорт из JSON</li>
+  <li>Журнал событий (лог)</li>
+</ul>
+<h2>Структура данных</h2>
+<table>
+  <thead><tr><th>Сущность</th><th>Описание</th></tr></thead>
+  <tbody>
+    <tr><td><code>Модель</code></td><td>Контейнер узлов и связей, версионируется по SemVer</td></tr>
+    <tr><td><code>Узел</code></td><td>Компонент архитектуры (приложение, процесс, роль и т.д.)</td></tr>
+    <tr><td><code>Связь</code></td><td>Отношение между двумя узлами (поток, триггер, ассоциация и т.д.)</td></tr>
+    <tr><td><code>Диаграмма</code></td><td>Визуальное представление подмножества модели</td></tr>
+    <tr><td><code>Нотация</code></td><td>Набор правил и типов для конкретного стандарта</td></tr>
+    <tr><td><code>Тип узла</code></td><td>Категория (шаблон) для узлов модели</td></tr>
+    <tr><td><code>Тип связи</code></td><td>Категория (шаблон) для связей модели</td></tr>
+  </tbody>
+</table>
+<h2>Быстрый старт</h2>
+<ol>
+  <li>Откройте раздел <strong>Модели</strong> и создайте новую модель</li>
+  <li>В редакторе перетащите компоненты из левой панели на диаграмму</li>
+  <li>Правой кнопкой по узлу — добавьте связь</li>
+  <li>Матрица связей: раздел <strong>Матрица связей</strong> → выберите модель</li>
+</ol>`
+  },
+  'models': {
+    title: 'Работа с моделями',
+    content: `
+<h1>Модели</h1>
+<p>Модель — основная единица хранения архитектурной информации. Содержит узлы (компоненты) и связи между ними.</p>
+<h2>Создание модели</h2>
+<ol>
+  <li>Перейдите в раздел <strong>Модели</strong></li>
+  <li>Нажмите <strong>+ Создать модель</strong></li>
+  <li>Введите название, описание и выберите нотацию</li>
+  <li>Нажмите <strong>Сохранить</strong></li>
+</ol>
+<h2>Редактирование модели</h2>
+<p>После открытия модели вы попадаете в редактор диаграмм:</p>
+<ul>
+  <li><strong>Левая панель</strong>: дерево узлов по слоям + палитра компонентов</li>
+  <li><strong>Центральная область</strong>: холст диаграммы</li>
+  <li><strong>Правая панель</strong>: свойства и стиль выбранного элемента</li>
+</ul>
+<h2>Операции на холсте</h2>
+<table>
+  <thead><tr><th>Действие</th><th>Способ</th></tr></thead>
+  <tbody>
+    <tr><td>Добавить узел</td><td>Двойной клик на холсте / Перетащить из палитры</td></tr>
+    <tr><td>Переместить узел</td><td>Перетащить мышью</td></tr>
+    <tr><td>Выбрать узел</td><td>Клик</td></tr>
+    <tr><td>Добавить связь</td><td>ПКМ → «Добавить связь» / Выбрать узел + ⟶ Связь</td></tr>
+    <tr><td>Редактировать</td><td>Двойной клик по узлу</td></tr>
+    <tr><td>Удалить</td><td>ПКМ → Удалить</td></tr>
+    <tr><td>Панорамирование</td><td>Зажать и тащить пустое место</td></tr>
+    <tr><td>Масштаб</td><td>Колёсико мыши</td></tr>
+    <tr><td>Вписать в экран</td><td>Кнопка ⊡ на панели инструментов</td></tr>
+  </tbody>
+</table>
+<h2>Экспорт и импорт</h2>
+<p>Используйте кнопки 💾 и 📂 в шапке приложения для экспорта/импорта данных в формате JSON.</p>`
+  },
+  'matrix': {
+    title: 'Матрица связей компонентов',
+    content: `
+<h1>Матрица связей компонентов</h1>
+<p>Матрица связей — 2D-таблица, показывающая количество связей между типами узлов (или слоями) модели. Помогает выявить зависимости, нагруженные интерфейсы и архитектурные паттерны.</p>
+<div class="callout">Маршрут: <strong>Матрица связей</strong> в верхнем меню навигации</div>
+<h2>Режимы</h2>
+<ul>
+  <li><strong>По типам</strong>: строки и столбцы = типы узлов (Приложение, Сервис, Роль и т.д.)</li>
+  <li><strong>По нотации</strong>: строки и столбцы = архитектурные слои (Приложение, Бизнес, Данные и т.д.)</li>
+</ul>
+<h2>Фильтры</h2>
+<ul>
+  <li><strong>Тепловая карта</strong>: ячейки окрашиваются в зависимости от количества связей</li>
+  <li><strong>Скрыть пустые</strong>: убирает строки/столбцы без связей</li>
+</ul>
+<h2>Детализация</h2>
+<p>Щёлкните по ячейке матрицы для просмотра списка конкретных связей в данной паре.</p>
+<h2>Экспорт</h2>
+<ul>
+  <li><strong>CSV</strong>: скачать матрицу в формате CSV (открывается в Excel)</li>
+  <li><strong>PNG</strong>: скриншот матрицы (рекомендуется использовать Print Screen браузера)</li>
+</ul>`
+  },
+  'notations': {
+    title: 'Нотации',
+    content: `
+<h1>Нотации</h1>
+<p>Нотация — набор стандартизированных типов узлов и связей для конкретной методологии моделирования.</p>
+<h2>Встроенные нотации</h2>
+<table>
+  <thead><tr><th>Нотация</th><th>Версия</th><th>Описание</th></tr></thead>
+  <tbody>
+    <tr><td>🏛️ ArchiMate 3.2</td><td>3.2.0</td><td>Стандарт архитектурного описания предприятия (The Open Group)</td></tr>
+    <tr><td>📐 C4 Model</td><td>1.0.0</td><td>Контекст, контейнеры, компоненты, код — 4 уровня абстракции</td></tr>
+    <tr><td>🔄 BPMN 2.0</td><td>2.0.0</td><td>Нотация моделирования бизнес-процессов (OMG)</td></tr>
+    <tr><td>📊 UML</td><td>2.5.0</td><td>Унифицированный язык моделирования</td></tr>
+  </tbody>
+</table>
+<h2>ArchiMate: слои</h2>
+<ul>
+  <li><strong>Мотивация</strong>: Цели, Драйверы, Принципы</li>
+  <li><strong>Стратегия</strong>: Ресурсы, Возможности</li>
+  <li><strong>Бизнес</strong>: Роли, Процессы, Сервисы</li>
+  <li><strong>Приложение</strong>: Приложения, Интерфейсы, Компоненты</li>
+  <li><strong>Данные</strong>: Объекты данных</li>
+  <li><strong>Инфраструктура</strong>: Серверы, Сети</li>
+</ul>`
+  },
+  'types': {
+    title: 'Типы узлов и связей',
+    content: `
+<h1>Типы узлов и связей</h1>
+<p>Типы определяют категории элементов архитектурной модели.</p>
+<h2>Типы узлов</h2>
+<table>
+  <thead><tr><th>Тип</th><th>Слой</th><th>Описание</th></tr></thead>
+  <tbody>
+    <tr><td>📦 Приложение</td><td>Приложение</td><td>Программная система или модуль</td></tr>
+    <tr><td>⚙️ Сервис</td><td>Приложение</td><td>Сервис, предоставляющий функциональность</td></tr>
+    <tr><td>🔌 Интерфейс</td><td>Приложение</td><td>Точка взаимодействия с внешними системами</td></tr>
+    <tr><td>📋 Бизнес-процесс</td><td>Бизнес</td><td>Последовательность действий для достижения цели</td></tr>
+    <tr><td>👤 Роль</td><td>Бизнес</td><td>Функциональная роль в организации</td></tr>
+    <tr><td>🤝 Актор</td><td>Бизнес</td><td>Субъект, выполняющий роль</td></tr>
+    <tr><td>🗄️ Объект данных</td><td>Данные</td><td>Информационный объект или хранилище</td></tr>
+    <tr><td>🖥️ Инфраструктура</td><td>Инфраструктура</td><td>Аппаратный или сетевой компонент</td></tr>
+    <tr><td>🎯 Цель</td><td>Мотивация</td><td>Стратегическая или операционная цель</td></tr>
+    <tr><td>🚀 Драйвер</td><td>Мотивация</td><td>Внутренняя или внешняя движущая сила</td></tr>
+  </tbody>
+</table>
+<h2>Типы связей</h2>
+<table>
+  <thead><tr><th>Тип</th><th>Стиль</th><th>Описание</th></tr></thead>
+  <tbody>
+    <tr><td>Поток данных</td><td>Сплошная →</td><td>Передача данных или управления</td></tr>
+    <tr><td>Триггер</td><td>Пунктирная →</td><td>Инициация события</td></tr>
+    <tr><td>Ассоциация</td><td>Сплошная —</td><td>Общая связь без направления</td></tr>
+    <tr><td>Композиция</td><td>Сплошная ◆→</td><td>Часть-целое</td></tr>
+    <tr><td>Реализация</td><td>Пунктирная →</td><td>Выполнение / реализация</td></tr>
+    <tr><td>Назначение</td><td>Сплошная →</td><td>Назначение ресурса или роли</td></tr>
+    <tr><td>Доступ</td><td>Пунктирная →</td><td>Доступ к данным или ресурсу</td></tr>
+  </tbody>
+</table>`
+  },
+  'hotkeys': {
+    title: 'Горячие клавиши',
+    content: `
+<h1>Горячие клавиши</h1>
+<table>
+  <thead><tr><th>Клавиши</th><th>Действие</th></tr></thead>
+  <tbody>
+    <tr><td><code>Двойной клик</code> на холсте</td><td>Добавить узел в этом месте</td></tr>
+    <tr><td><code>Двойной клик</code> на узле</td><td>Редактировать узел</td></tr>
+    <tr><td><code>ПКМ</code> на холсте/узле</td><td>Контекстное меню</td></tr>
+    <tr><td><code>Колёсико</code></td><td>Масштабирование</td></tr>
+    <tr><td><code>Alt + перетаскивание</code></td><td>Панорамирование</td></tr>
+    <tr><td><code>Перетаскивание</code> из палитры</td><td>Добавить узел нужного типа</td></tr>
+  </tbody>
+</table>`
+  },
+  'faq': {
+    title: 'Частые вопросы',
+    content: `
+<h1>Часто задаваемые вопросы</h1>
+<h2>Где хранятся данные?</h2>
+<p>Данные хранятся в <strong>localStorage</strong> вашего браузера. При очистке данных браузера они будут удалены. Используйте экспорт JSON (кнопка 💾) для резервного копирования.</p>
+<h2>Как перенести данные на другой компьютер?</h2>
+<p>Экспортируйте данные в JSON (кнопка 💾 в шапке), затем импортируйте на другом компьютере (кнопка 📂).</p>
+<h2>Можно ли использовать несколько пользователей?</h2>
+<p>Браузерная версия не поддерживает многопользовательский режим. Все действия выполняются под учётной записью <strong>user1</strong>.</p>
+<h2>Как добавить новый тип узла?</h2>
+<p>Перейдите в <strong>Типы</strong> → нажмите <strong>+ Добавить тип</strong>.</p>
+<h2>Что такое матрица связей?</h2>
+<p>Матрица связей — 2D-таблица зависимостей между компонентами модели. Показывает, сколько связей существует между каждой парой типов. Подробнее: раздел <strong>Документация → Матрица связей</strong>.</p>
+<h2>Можно ли работать без интернета?</h2>
+<p>Да, приложение полностью работает офлайн (за исключением начальной загрузки с GitHub Pages).</p>`
+  }
+};
+
+const DOCS_NAV = [
+  { id: 'overview', label: 'Обзор' },
+  { id: 'models', label: 'Модели' },
+  { id: 'matrix', label: 'Матрица связей' },
+  { id: 'notations', label: 'Нотации' },
+  { id: 'types', label: 'Типы' },
+  { id: 'hotkeys', label: 'Горячие клавиши' },
+  { id: 'faq', label: 'Частые вопросы' },
+];
+
+function renderDocs(section) {
+  const nav = document.getElementById('docs-nav');
+  nav.innerHTML = DOCS_NAV.map(d =>
+    `<a href="#" class="${d.id===section?'active':''}" onclick="renderDocs('${d.id}');return false">${d.label}</a>`
+  ).join('');
+  const doc = DOCS[section] || DOCS['overview'];
+  document.getElementById('docs-content').innerHTML = doc.content;
+}
+
+// ===================== PANEL RESIZE =====================
+function initPanelResize(handleId, targetId, side) {
+  const handle = document.getElementById(handleId);
+  const target = document.getElementById(targetId);
+  let startX, startW;
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = target.offsetWidth;
+    const onMove = ev => {
+      const dx = ev.clientX - startX;
+      const newW = side === 'left' ? startW + dx : startW - dx;
+      target.style.width = Math.max(120, Math.min(600, newW)) + 'px';
+      resizeCanvas();
+    };
+    const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+// ===================== LOG RESIZE =====================
+function initLogResize() {
+  const handle = document.getElementById('log-resize-handle');
+  const logArea = document.getElementById('log-area');
+  const corner = document.getElementById('log-corner');
+  function startResize(e) {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = logArea.offsetHeight;
+    const onMove = ev => {
+      const dy = startY - ev.clientY;
+      const newH = Math.max(40, Math.min(window.innerHeight * 0.8, startH + dy));
+      logArea.style.height = newH + 'px';
+      document.documentElement.style.setProperty('--log-h', newH + 'px');
+      resizeCanvas();
+    };
+    const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+  handle.addEventListener('mousedown', startResize);
+  corner.addEventListener('mousedown', startResize);
+}
+
+// ===================== KEYBOARD =====================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal();
+    closeCtxMenu();
+    if (STATE.isConnecting) { STATE.isConnecting=false; STATE.connectFrom=null; canvasEl.style.cursor='default'; redrawCanvas(); }
+  }
+  if (e.key === 'Delete' && STATE.currentView === 'editor') {
+    if (STATE.selectedNodeId) deleteNode(STATE.selectedNodeId);
+    else if (STATE.selectedLinkId) deleteLink(STATE.selectedLinkId);
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveDB();
+    notify('Данные сохранены', 'success');
+    log('success', 'Ручное сохранение');
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === '=') { e.preventDefault(); zoomIn(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === '-') { e.preventDefault(); zoomOut(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === '0') { e.preventDefault(); zoomFit(); }
+});
+
+// ===================== INIT =====================
+window.addEventListener('load', () => {
+  initCanvas();
+  initPanelResize('sidebar-resize', 'sidebar', 'left');
+  initPanelResize('right-panel-resize', 'right-panel', 'right');
+  initLogResize();
+  renderHome();
+  log('success', 'wArchi загружен. Пользователь: user1');
+  log('info', `Моделей: ${DB.models.length}, Узлов: ${DB.nodes.length}, Связей: ${DB.links.length}`);
+
+  // Auto-open test model if it exists
+  if (DB.models.length > 0) {
+    log('info', `Тестовая модель доступна: "${DB.models[0].name}" — откройте её через раздел "Модели"`);
+  }
+});
+</script>
+</body>
+</html>
