@@ -1,5 +1,5 @@
 ## ver1
-Упрощенный (безсерверныйб без СУБД и т.п.) вариант https://warchi.ru на JS. 
+Упрощенный (безсерверный, без СУБД и т.п.) вариант https://warchi.ru на JS. 
 ### run
 https://bpmbpm.github.io/warchi2/ver1/
 
